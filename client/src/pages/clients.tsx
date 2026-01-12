@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useLocation } from "wouter";
 import {
   Plus,
   Search,
@@ -13,10 +14,18 @@ import {
   Mail,
   Phone,
   MapPin,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  XCircle,
+  UserCheck,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -59,6 +68,7 @@ export default function Clients() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const { data: clients, isLoading } = useQuery<Client[]>({
@@ -165,17 +175,37 @@ export default function Clients() {
     }
   };
 
+  const handleViewDetails = (clientId: string) => {
+    setLocation(`/clientes/${clientId}`);
+  };
+
   const filteredClients = clients?.filter((client) =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const stats = useMemo(() => {
+    if (!clients) return { total: 0, active: 0, recent: 0 };
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    return {
+      total: clients.length,
+      active: clients.filter(c => c.active).length,
+      recent: clients.filter(c => {
+        const createdAt = new Date(c.createdAt || '');
+        return createdAt >= thirtyDaysAgo;
+      }).length
+    };
+  }, [clients]);
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" data-testid="text-page-title">Clientes</h1>
-          <p className="text-muted-foreground">
-            Gerencie seus clientes
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent" data-testid="text-page-title">Clientes</h1>
+          <p className="text-muted-foreground mt-2">
+            Gerencie seu cadastro de clientes e parceiros comerciais
           </p>
         </div>
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -301,8 +331,8 @@ export default function Clients() {
                     {createMutation.isPending || updateMutation.isPending
                       ? "Salvando..."
                       : editingClient
-                      ? "Atualizar"
-                      : "Cadastrar"}
+                        ? "Atualizar"
+                        : "Cadastrar"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -311,13 +341,61 @@ export default function Clients() {
         </Dialog>
       </div>
 
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total de Clientes</p>
+                <p className="text-3xl font-bold text-slate-900 mt-2">{stats.total}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Clientes Ativos</p>
+                <p className="text-3xl font-bold text-emerald-600 mt-2">{stats.active}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-emerald-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Adicionados Recentemente</p>
+                <p className="text-3xl font-bold text-purple-600 mt-2">{stats.recent}</p>
+                <p className="text-xs text-muted-foreground mt-1">Últimos 30 dias</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
+                <Clock className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Separator className="my-6" />
+
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar cliente..."
+          placeholder="Buscar cliente por nome, CPF ou e-mail..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9"
+          className="pl-9 bg-white/80 backdrop-blur-sm border-0 shadow-lg focus:shadow-xl transition-shadow duration-300"
           data-testid="input-search"
         />
       </div>
@@ -329,21 +407,29 @@ export default function Clients() {
           ))}
         </div>
       ) : filteredClients && filteredClients.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredClients.map((client) => (
-            <Card key={client.id} data-testid={`card-client-${client.id}`}>
-              <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
+            <Card key={client.id} data-testid={`card-client-${client.id}`} className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group">
+              <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
-                    <Users className="h-5 w-5 text-primary" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                    <UserCheck className="h-6 w-6 text-white" />
                   </div>
-                  <div>
-                    <CardTitle className="text-base">{client.name}</CardTitle>
-                    {client.document && (
-                      <p className="text-sm text-muted-foreground">
-                        {client.document}
-                      </p>
-                    )}
+                  <div className="flex-1">
+                    <CardTitle className="text-lg font-semibold text-slate-900 group-hover:text-blue-600 transition-colors duration-200">{client.name}</CardTitle>
+                    <div className="flex items-center gap-2 mt-1">
+                      {client.document && (
+                        <p className="text-sm text-muted-foreground font-mono">
+                          {client.document}
+                        </p>
+                      )}
+                      <Badge
+                        variant={!client.active ? 'destructive' : 'default'}
+                        className="text-xs"
+                      >
+                        {!client.active ? 'Inativo' : 'Ativo'}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
                 <DropdownMenu>
@@ -353,6 +439,13 @@ export default function Clients() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => handleViewDetails(client.id)}
+                      data-testid={`button-details-${client.id}`}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Detalhar
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => handleEdit(client)}
                       data-testid={`button-edit-${client.id}`}
@@ -371,23 +464,23 @@ export default function Clients() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-3 pt-0">
                 {client.email && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="h-4 w-4" />
-                    <span>{client.email}</span>
+                  <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors duration-200">
+                    <Mail className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm text-slate-700">{client.email}</span>
                   </div>
                 )}
                 {client.phone && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Phone className="h-4 w-4" />
-                    <span>{client.phone}</span>
+                  <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors duration-200">
+                    <Phone className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-slate-700">{client.phone}</span>
                   </div>
                 )}
                 {client.address && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span className="truncate">{client.address}</span>
+                  <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors duration-200">
+                    <MapPin className="h-4 w-4 text-red-500" />
+                    <span className="text-sm text-slate-700 truncate">{client.address}</span>
                   </div>
                 )}
               </CardContent>
@@ -395,11 +488,22 @@ export default function Clients() {
           ))}
         </div>
       ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <Users className="h-12 w-12 mb-4" />
-            <p className="text-lg font-medium">Nenhum cliente encontrado</p>
-            <p className="text-sm">Clique em "Novo Cliente" para adicionar</p>
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center mb-6">
+              <Users className="h-10 w-10 text-slate-500" />
+            </div>
+            <h3 className="text-xl font-semibold text-slate-900 mb-2">Nenhum cliente encontrado</h3>
+            <p className="text-muted-foreground text-center mb-6 max-w-sm">
+              Comece adicionando seu primeiro cliente para gerenciar melhor seus relacionamentos comerciais
+            </p>
+            <Button
+              onClick={() => setIsOpen(true)}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Primeiro Cliente
+            </Button>
           </CardContent>
         </Card>
       )}

@@ -19,7 +19,9 @@ import CashFlow from "@/pages/cash-flow";
 import DRE from "@/pages/dre";
 import Reports from "@/pages/reports";
 import Suppliers from "@/pages/suppliers";
+import SupplierDetails from "@/pages/supplier-details";
 import Clients from "@/pages/clients";
+import ClientDetails from "@/pages/client-details";
 import Categories from "@/pages/categories";
 import CostCenters from "@/pages/cost-centers";
 import UsersPage from "@/pages/users";
@@ -36,7 +38,9 @@ function Router() {
       <Route path="/dre" component={DRE} />
       <Route path="/relatorios" component={Reports} />
       <Route path="/fornecedores" component={Suppliers} />
+      <Route path="/fornecedores/:id" component={SupplierDetails} />
       <Route path="/clientes" component={Clients} />
+      <Route path="/clientes/:id" component={ClientDetails} />
       <Route path="/categorias" component={Categories} />
       <Route path="/centros-custo" component={CostCenters} />
       <Route path="/usuarios" component={UsersPage} />

@@ -30,7 +30,9 @@ export const suppliers = pgTable("suppliers", {
   document: text("document"),
   email: text("email"),
   phone: text("phone"),
+  contact: text("contact"),
   address: text("address"),
+  active: boolean("active").default(true),
 });
 
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({ id: true });
@@ -45,6 +47,8 @@ export const clients = pgTable("clients", {
   email: text("email"),
   phone: text("phone"),
   address: text("address"),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertClientSchema = createInsertSchema(clients).omit({ id: true });
@@ -85,9 +89,12 @@ export const accountsPayable = pgTable("accounts_payable", {
   supplierId: varchar("supplier_id"),
   categoryId: varchar("category_id"),
   costCenterId: varchar("cost_center_id"),
+  paymentMethod: text("payment_method"), // 'boleto' | 'credit_card' | 'debit_card' | 'cash' | 'transfer' | 'pix'
+  lateFees: decimal("late_fees", { precision: 15, scale: 2 }),
   notes: text("notes"),
   attachmentUrl: text("attachment_url"),
   recurrence: text("recurrence"), // 'none' | 'monthly' | 'weekly'
+  active: boolean("active").notNull().default(true),
 });
 
 export const insertAccountPayableSchema = createInsertSchema(accountsPayable).omit({ id: true });
@@ -106,6 +113,9 @@ export const accountsReceivable = pgTable("accounts_receivable", {
   categoryId: varchar("category_id"),
   notes: text("notes"),
   mercadoPagoId: text("mercado_pago_id"),
+  discount: decimal("discount", { precision: 15, scale: 2 }),
+  recurrence: text("recurrence"), // 'none' | 'monthly' | 'weekly' | 'yearly'
+  recurrencePeriod: text("recurrence_period"), // Date string or number of occurrences (stored as text)
 });
 
 export const insertAccountReceivableSchema = createInsertSchema(accountsReceivable).omit({ id: true });
@@ -160,6 +170,8 @@ export interface CashFlowData {
   expense: number;
   balance: number;
   projected: boolean;
+  initialBalance: number;
+  finalBalance: number;
 }
 
 export interface DREData {
@@ -170,8 +182,17 @@ export interface DREData {
   grossProfit: number;
   operationalExpenses: number;
   operationalProfit: number;
+  ebitda: number;
   netProfit: number;
   contributionMargin: number;
+  // Brazilian fiscal specific fields
+  irpj: number; // Imposto de Renda Pessoa Jurídica
+  csll: number; // Contribuição Social sobre Lucro Líquido
+  pis: number; // Programa de Integração Social
+  cofins: number; // Contribuição para Financiamento da Seguridade Social
+  icms: number; // Imposto sobre Circulação de Mercadorias e Serviços
+  iss: number; // Imposto Sobre Serviços
+  otherTaxes: number; // Outros tributos
 }
 
 export interface CategoryExpense {
@@ -180,3 +201,96 @@ export interface CategoryExpense {
   amount: number;
   percentage: number;
 }
+
+// Manual Cash Flow Entries (Movimentações Manuais do Fluxo de Caixa)
+export const cashFlowEntries = pgTable("cash_flow_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: date("date").notNull(), // Data do lançamento (recebimento/pagamento)
+  competenceDate: date("competence_date"), // Data de competência (quando foi gerado)
+  type: text("type").notNull(), // 'income' | 'expense'
+  movementType: text("movement_type").notNull().default("normal"), // 'normal' | 'balance_adjustment' | 'withdrawal' | 'initial_balance'
+  description: text("description").notNull(),
+  categoryId: varchar("category_id").references(() => categories.id),
+  subcategoryId: varchar("subcategory_id").references(() => categories.id), // Subcategoria
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  grossAmount: decimal("gross_amount", { precision: 10, scale: 2 }), // Valor bruto (para cartões)
+  fees: decimal("fees", { precision: 10, scale: 2 }), // Taxas (cartão, etc.)
+  paymentMethod: text("payment_method").notNull(), // 'money', 'pix', 'credit_card', 'debit_card', 'boleto', 'transfer'
+  account: text("account").notNull(), // Conta bancária ou caixa
+  status: text("status").notNull().default("confirmed"), // 'confirmed' | 'pending' | 'overdue'
+  document: text("document"), // NF, recibo, contrato
+  costCenter: text("cost_center"), // Centro de custo: obra, loja, projeto
+  recurrence: text("recurrence"), // 'monthly', 'weekly', 'none'
+  dueDate: date("due_date"), // Data de vencimento (para contas a pagar)
+  actualDate: date("actual_date"), // Data real do pagamento/recebimento
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  userId: varchar("user_id").references(() => users.id),
+});
+
+// Balance Adjustments (Ajustes de Saldo)
+export const balanceAdjustments = pgTable("balance_adjustments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: date("date").notNull(),
+  balanceType: text("balance_type").notNull(), // 'initial' | 'final'
+  description: text("description").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  account: text("account").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  userId: varchar("user_id").references(() => users.id),
+});
+
+export const insertCashFlowEntrySchema = createInsertSchema(cashFlowEntries).omit({ id: true, createdAt: true });
+export type InsertCashFlowEntry = z.infer<typeof insertCashFlowEntrySchema>;
+export type CashFlowEntry = typeof cashFlowEntries.$inferSelect;
+
+export const insertBalanceAdjustmentSchema = createInsertSchema(balanceAdjustments).omit({ id: true, createdAt: true });
+export type InsertBalanceAdjustment = z.infer<typeof insertBalanceAdjustmentSchema>;
+export type BalanceAdjustment = typeof balanceAdjustments.$inferSelect;
+export interface DailyMovement {
+  id: string;
+  date: string;
+  competenceDate?: string; // Data de competência
+  type: 'income' | 'expense';
+  movementType: 'normal' | 'balance_adjustment' | 'withdrawal' | 'initial_balance';
+  description: string;
+  categoryId: string;
+  categoryName: string;
+  subcategoryId?: string;
+  subcategoryName?: string;
+  amount: number;
+  grossAmount?: number; // Valor bruto
+  fees?: number; // Taxas
+  paymentMethod: string;
+  account: string;
+  status: 'confirmed' | 'pending' | 'overdue';
+  document?: string;
+  costCenter?: string;
+  recurrence?: string;
+  dueDate?: string;
+  actualDate?: string;
+  createdAt: string;
+}
+
+export interface CashFlowKPIs {
+  averageBalance: number;
+  incomeVsExpense: number;
+  delinquencyRate: number;
+  immediateLiquidity: number;
+  burnRate: number;
+}
+
+export interface CashFlowAlert {
+  id: string;
+  type: 'negative_balance' | 'overdue_account' | 'late_receipt';
+  message: string;
+  severity: 'low' | 'medium' | 'high';
+  date: string;
+  relatedId?: string;
+}
+
+// Sessions
+export const userSessions = pgTable("user_sessions", {
+  sid: varchar("sid").primaryKey(),
+  sess: text("sess").notNull(), // json stored as text/json
+  expire: timestamp("expire", { precision: 6 }).notNull(),
+});

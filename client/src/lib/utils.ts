@@ -14,7 +14,9 @@ export function formatCurrency(value: number | string): string {
 }
 
 export function formatDate(dateString: string): string {
+  if (!dateString) return "-";
   const date = new Date(dateString + "T00:00:00");
+  if (isNaN(date.getTime())) return "-";
   return new Intl.DateTimeFormat("pt-BR").format(date);
 }
 

@@ -1,22 +1,45 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useLocation } from "wouter";
 import {
   Plus,
   Search,
   MoreHorizontal,
   Pencil,
-  Trash2,
   Building2,
   Mail,
   Phone,
   MapPin,
+  ArrowUpDown,
+  Grid3X3,
+  Table as TableIcon,
+  ChevronUp,
+  ChevronDown,
+  Eye,
+  Search as SearchIcon,
+  Ban,
+  TrendingUp,
+  Users,
+  Clock,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +73,7 @@ const supplierFormSchema = z.object({
   document: z.string().optional(),
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   phone: z.string().optional(),
+  contact: z.string().optional(),
   address: z.string().optional(),
 });
 
@@ -59,6 +83,9 @@ export default function Suppliers() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState<"cards" | "table">("table");
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Supplier; direction: 'asc' | 'desc' } | null>(null);
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const { data: suppliers, isLoading } = useQuery<Supplier[]>({
@@ -72,6 +99,7 @@ export default function Suppliers() {
       document: "",
       email: "",
       phone: "",
+      contact: "",
       address: "",
     },
   });
@@ -119,19 +147,19 @@ export default function Suppliers() {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/suppliers/${id}`),
+  const deactivateMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("PATCH", `/api/suppliers/${id}/deactivate`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/suppliers"] });
       toast({
         title: "Sucesso",
-        description: "Fornecedor excluído com sucesso.",
+        description: "Fornecedor inativado com sucesso.",
       });
     },
     onError: () => {
       toast({
         title: "Erro",
-        description: "Não foi possível excluir o fornecedor.",
+        description: "Não foi possível inativar o fornecedor.",
         variant: "destructive",
       });
     },
@@ -152,9 +180,40 @@ export default function Suppliers() {
       document: supplier.document || "",
       email: supplier.email || "",
       phone: supplier.phone || "",
+      contact: supplier.contact || "",
       address: supplier.address || "",
     });
     setIsOpen(true);
+  };
+
+  const searchCNPJ = async (cnpj: string) => {
+    try {
+      const cleanCNPJ = cnpj.replace(/[^\d]/g, '');
+      if (cleanCNPJ.length !== 14) return;
+
+      const response = await fetch(`https://publica.cnpj.ws/cnpj/${cleanCNPJ}`);
+      if (!response.ok) return;
+
+      const data = await response.json();
+      
+      if (data.estabelecimento) {
+        form.setValue('name', data.estabelecimento.nome_fantasia || data.estabelecimento.nome_empresarial || '');
+        form.setValue('email', data.estabelecimento.email || '');
+        form.setValue('phone', data.estabelecimento.ddd1 + data.estabelecimento.telefone1 || '');
+        form.setValue('address', `${data.estabelecimento.tipo_logradouro || ''} ${data.estabelecimento.logradouro || ''}, ${data.estabelecimento.numero || ''}, ${data.estabelecimento.bairro || ''}, ${data.estabelecimento.municipio || ''} - ${data.estabelecimento.uf || ''}`.trim());
+        
+        toast({
+          title: "Dados encontrados",
+          description: "Informações do CNPJ foram preenchidas automaticamente.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na busca",
+        description: "Não foi possível buscar os dados do CNPJ.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -165,26 +224,92 @@ export default function Suppliers() {
     }
   };
 
-  const filteredSuppliers = suppliers?.filter((supplier) =>
-    supplier.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSuppliers = useMemo(() => {
+    let filtered = suppliers?.filter((supplier) =>
+      supplier.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
+
+    if (sortConfig) {
+      filtered.sort((a, b) => {
+        const aValue = a[sortConfig.key] || "";
+        const bValue = b[sortConfig.key] || "";
+        
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [suppliers, searchTerm, sortConfig]);
+
+  const stats = useMemo(() => {
+    if (!suppliers) return { total: 0, active: 0, recent: 0 };
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    return {
+      total: suppliers.length,
+      active: suppliers.filter(s => s.status !== 'inactive').length,
+      recent: suppliers.filter(s => {
+        const createdAt = new Date(s.createdAt || '');
+        return createdAt >= thirtyDaysAgo;
+      }).length
+    };
+  }, [suppliers]);
+
+  const handleSort = (key: keyof Supplier) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const handleViewDetails = (supplierId: string) => {
+    setLocation(`/fornecedores/${supplierId}`);
+  };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold" data-testid="text-page-title">Fornecedores</h1>
-          <p className="text-muted-foreground">
-            Gerencie seus fornecedores
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent" data-testid="text-page-title">Fornecedores</h1>
+          <p className="text-muted-foreground mt-2">
+            Gerencie seu cadastro de fornecedores e parceiros comerciais
           </p>
         </div>
-        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-new-supplier">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Fornecedor
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 border rounded-md p-1">
+            <Button
+              variant={viewMode === "cards" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("cards")}
+              data-testid="button-view-cards"
+            >
+              <Grid3X3 className="h-4 w-4" />
             </Button>
-          </DialogTrigger>
+            <Button
+              variant={viewMode === "table" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+              data-testid="button-view-table"
+            >
+              <TableIcon className="h-4 w-4" />
+            </Button>
+          </div>
+          <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-new-supplier">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Fornecedor
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
@@ -220,11 +345,21 @@ export default function Suppliers() {
                     <FormItem>
                       <FormLabel>CNPJ/CPF</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="00.000.000/0000-00"
-                          {...field}
-                          data-testid="input-document"
-                        />
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="00.000.000/0000-00"
+                            {...field}
+                            data-testid="input-document"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => searchCNPJ(field.value)}
+                            disabled={!field.value || field.value.replace(/[^\d]/g, '').length !== 14}
+                          >
+                            <SearchIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -267,23 +402,42 @@ export default function Suppliers() {
                     )}
                   />
                 </div>
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Endereço</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Endereço completo"
-                          {...field}
-                          data-testid="input-address"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="contact"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contato</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Nome do contato"
+                            {...field}
+                            data-testid="input-contact"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Endereço</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Endereço completo"
+                            {...field}
+                            data-testid="input-address"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <DialogFooter>
                   <Button
                     type="button"
@@ -309,15 +463,64 @@ export default function Suppliers() {
             </Form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total de Fornecedores</p>
+                <p className="text-3xl font-bold text-slate-900 mt-2">{stats.total}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Fornecedores Ativos</p>
+                <p className="text-3xl font-bold text-emerald-600 mt-2">{stats.active}</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-emerald-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Adicionados Recentemente</p>
+                <p className="text-3xl font-bold text-purple-600 mt-2">{stats.recent}</p>
+                <p className="text-xs text-muted-foreground mt-1">Últimos 30 dias</p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
+                <Clock className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Separator className="my-6" />
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar fornecedor..."
+          placeholder="Buscar fornecedor por nome, CNPJ ou e-mail..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9"
+          className="pl-9 bg-white/80 backdrop-blur-sm border-0 shadow-lg focus:shadow-xl transition-shadow duration-300"
           data-testid="input-search"
         />
       </div>
@@ -329,77 +532,252 @@ export default function Suppliers() {
           ))}
         </div>
       ) : filteredSuppliers && filteredSuppliers.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredSuppliers.map((supplier) => (
-            <Card key={supplier.id} data-testid={`card-supplier-${supplier.id}`}>
-              <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
-                    <Building2 className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">{supplier.name}</CardTitle>
-                    {supplier.document && (
-                      <p className="text-sm text-muted-foreground">
-                        {supplier.document}
-                      </p>
+        <>
+          {viewMode === "cards" ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredSuppliers.map((supplier) => (
+                <Card key={supplier.id} data-testid={`card-supplier-${supplier.id}`} className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group">
+                  <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                        <Building2 className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg font-semibold text-slate-900 group-hover:text-blue-600 transition-colors duration-200">{supplier.name}</CardTitle>
+                        <div className="flex items-center gap-2 mt-1">
+                          {supplier.document && (
+                            <p className="text-sm text-muted-foreground font-mono">
+                              {supplier.document}
+                            </p>
+                          )}
+                          <Badge 
+                            variant={supplier.status === 'inactive' ? 'destructive' : 'default'}
+                            className="text-xs"
+                          >
+                            {supplier.status === 'inactive' ? 'Inativo' : 'Ativo'}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" data-testid={`button-actions-${supplier.id}`}>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleViewDetails(supplier.id)}
+                          data-testid={`button-details-${supplier.id}`}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Detalhar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleEdit(supplier)}
+                          data-testid={`button-edit-${supplier.id}`}
+                        >
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => deactivateMutation.mutate(supplier.id)}
+                          className="text-destructive"
+                          data-testid={`button-deactivate-${supplier.id}`}
+                        >
+                          <Ban className="h-4 w-4 mr-2" />
+                          Inativar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-0">
+                    {supplier.email && (
+                      <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors duration-200">
+                        <Mail className="h-4 w-4 text-blue-500" />
+                        <span className="text-sm text-slate-700">{supplier.email}</span>
+                      </div>
                     )}
-                  </div>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" data-testid={`button-actions-${supplier.id}`}>
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => handleEdit(supplier)}
-                      data-testid={`button-edit-${supplier.id}`}
+                    {supplier.phone && (
+                      <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors duration-200">
+                        <Phone className="h-4 w-4 text-green-500" />
+                        <span className="text-sm text-slate-700">{supplier.phone}</span>
+                      </div>
+                    )}
+                    {supplier.address && (
+                      <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors duration-200">
+                        <MapPin className="h-4 w-4 text-red-500" />
+                        <span className="text-sm text-slate-700 truncate">{supplier.address}</span>
+                      </div>
+                    )}
+                    {supplier.contact && (
+                      <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors duration-200">
+                        <Users className="h-4 w-4 text-purple-500" />
+                        <span className="text-sm text-slate-700">{supplier.contact}</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl overflow-hidden">
+              <Table>
+                <TableHeader className="bg-slate-50">
+                  <TableRow>
+                    <TableHead className="font-semibold text-slate-700">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 font-semibold hover:bg-slate-100"
+                        onClick={() => handleSort('name')}
+                      >
+                        Nome
+                        {sortConfig?.key === 'name' && (
+                          sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />
+                        )}
+                        {sortConfig?.key !== 'name' && <ArrowUpDown className="h-4 w-4 ml-1" />}
+                      </Button>
+                    </TableHead>
+                    <TableHead className="font-semibold text-slate-700">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 font-semibold hover:bg-slate-100"
+                        onClick={() => handleSort('document')}
+                      >
+                        CNPJ/CPF
+                        {sortConfig?.key === 'document' && (
+                          sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />
+                        )}
+                        {sortConfig?.key !== 'document' && <ArrowUpDown className="h-4 w-4 ml-1" />}
+                      </Button>
+                    </TableHead>
+                    <TableHead className="font-semibold text-slate-700">Status</TableHead>
+                    <TableHead className="font-semibold text-slate-700">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 font-semibold hover:bg-slate-100"
+                        onClick={() => handleSort('email')}
+                      >
+                        E-mail
+                        {sortConfig?.key === 'email' && (
+                          sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />
+                        )}
+                        {sortConfig?.key !== 'email' && <ArrowUpDown className="h-4 w-4 ml-1" />}
+                      </Button>
+                    </TableHead>
+                    <TableHead className="font-semibold text-slate-700">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 font-semibold hover:bg-slate-100"
+                        onClick={() => handleSort('phone')}
+                      >
+                        Telefone
+                        {sortConfig?.key === 'phone' && (
+                          sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />
+                        )}
+                        {sortConfig?.key !== 'phone' && <ArrowUpDown className="h-4 w-4 ml-1" />}
+                      </Button>
+                    </TableHead>
+                    <TableHead className="w-[100px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredSuppliers.map((supplier, index) => (
+                    <TableRow 
+                      key={supplier.id} 
+                      className="hover:bg-slate-50 transition-colors duration-200 border-b border-slate-100"
                     >
-                      <Pencil className="h-4 w-4 mr-2" />
-                      Editar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => deleteMutation.mutate(supplier.id)}
-                      className="text-destructive"
-                      data-testid={`button-delete-${supplier.id}`}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Excluir
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {supplier.email && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="h-4 w-4" />
-                    <span>{supplier.email}</span>
-                  </div>
-                )}
-                {supplier.phone && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Phone className="h-4 w-4" />
-                    <span>{supplier.phone}</span>
-                  </div>
-                )}
-                {supplier.address && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span className="truncate">{supplier.address}</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                      <TableCell className="font-medium text-slate-900">{supplier.name}</TableCell>
+                      <TableCell className="font-mono text-sm">{supplier.document || '-'}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={supplier.status === 'inactive' ? 'destructive' : 'default'}
+                          className="text-xs"
+                        >
+                          {supplier.status === 'inactive' ? 'Inativo' : 'Ativo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {supplier.email ? (
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-blue-500" />
+                            <span className="text-slate-700">{supplier.email}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {supplier.phone ? (
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-green-500" />
+                            <span className="text-slate-700">{supplier.phone}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" data-testid={`button-actions-${supplier.id}`}>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleViewDetails(supplier.id)}
+                              data-testid={`button-details-${supplier.id}`}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Detalhar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleEdit(supplier)}
+                              data-testid={`button-edit-${supplier.id}`}
+                            >
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => deactivateMutation.mutate(supplier.id)}
+                              className="text-destructive"
+                              data-testid={`button-deactivate-${supplier.id}`}
+                            >
+                              <Ban className="h-4 w-4 mr-2" />
+                              Inativar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </>
       ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <Building2 className="h-12 w-12 mb-4" />
-            <p className="text-lg font-medium">Nenhum fornecedor encontrado</p>
-            <p className="text-sm">Clique em "Novo Fornecedor" para adicionar</p>
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center mb-6">
+              <Building2 className="h-10 w-10 text-slate-500" />
+            </div>
+            <h3 className="text-xl font-semibold text-slate-900 mb-2">Nenhum fornecedor encontrado</h3>
+            <p className="text-muted-foreground text-center mb-6 max-w-sm">
+              Comece adicionando seu primeiro fornecedor para gerenciar melhor seus parceiros comerciais
+            </p>
+            <Button 
+              onClick={() => setIsOpen(true)}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Primeiro Fornecedor
+            </Button>
           </CardContent>
         </Card>
       )}

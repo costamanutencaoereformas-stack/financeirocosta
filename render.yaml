@@ -1,0 +1,31 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: gestao-financeira-db
+    env: docker
+    plan: free
+    region: oregon
+    databases:
+      - name: gestao_financeira
+        user: gestao_user
+
+  # Web Service (Backend + Frontend)
+  - type: web
+    name: gestao-financeira-app
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gestao-financeira-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: PORT
+        value: 10000
+    healthCheckPath: /api/auth/me

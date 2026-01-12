@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   TrendingUp,
   TrendingDown,
@@ -7,10 +8,20 @@ import {
   Calendar,
   ArrowUpRight,
   ArrowDownRight,
+  DollarSign,
+  CreditCard,
+  PiggyBank,
+  Target,
+  BarChart3,
+  Filter,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   LineChart,
   Line,
@@ -52,33 +63,35 @@ function KPICard({
   variant?: "default" | "success" | "warning" | "danger";
 }) {
   const variantStyles = {
-    default: "bg-card",
-    success: "bg-green-50 dark:bg-green-950/20",
-    warning: "bg-yellow-50 dark:bg-yellow-950/20",
-    danger: "bg-red-50 dark:bg-red-950/20",
+    default: "bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300",
+    success: "bg-gradient-to-br from-emerald-50 to-emerald-100 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300",
+    warning: "bg-gradient-to-br from-yellow-50 to-yellow-100 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300",
+    danger: "bg-gradient-to-br from-red-50 to-red-100 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300",
   };
 
   return (
     <Card className={variantStyles[variant]}>
-      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
+        <CardTitle className="text-sm font-semibold text-slate-700">
           {title}
         </CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+          <Icon className="h-4 w-4 text-slate-600" />
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold" data-testid={`text-kpi-${title.toLowerCase().replace(/\s/g, "-")}`}>{value}</div>
+        <div className="text-2xl font-bold text-slate-900" data-testid={`text-kpi-${title.toLowerCase().replace(/\s/g, "-")}`}>{value}</div>
         {trend && trendValue && (
-          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
             {trend === "up" ? (
-              <ArrowUpRight className="h-3 w-3 text-green-600" />
+              <ArrowUpRight className="h-3 w-3 text-emerald-600" />
             ) : (
               <ArrowDownRight className="h-3 w-3 text-red-600" />
             )}
-            <span className={trend === "up" ? "text-green-600" : "text-red-600"}>
+            <span className={trend === "up" ? "text-emerald-600 font-medium" : "text-red-600 font-medium"}>
               {trendValue}
             </span>
-            vs. período anterior
+            <span className="text-muted-foreground">vs. período anterior</span>
           </p>
         )}
       </CardContent>
@@ -89,9 +102,12 @@ function KPICard({
 function UpcomingPaymentsList({ items, type }: { items: (AccountPayable | AccountReceivable)[]; type: "payable" | "receivable" }) {
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-        <Calendar className="h-8 w-8 mb-2" />
-        <p className="text-sm">Nenhuma conta próxima do vencimento</p>
+      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+        <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+          <Calendar className="h-6 w-6 text-slate-400" />
+        </div>
+        <p className="text-sm font-medium">Nenhuma conta próxima do vencimento</p>
+        <p className="text-xs text-muted-foreground mt-1">Todas as contas estão em dia</p>
       </div>
     );
   }
@@ -106,26 +122,26 @@ function UpcomingPaymentsList({ items, type }: { items: (AccountPayable | Accoun
         return (
           <div
             key={item.id}
-            className="flex items-center justify-between p-3 rounded-md bg-muted/50"
+            className="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all duration-200 border border-slate-100 hover:border-slate-200"
             data-testid={`card-upcoming-${type}-${item.id}`}
           >
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{item.description}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm font-semibold text-slate-900 truncate">{item.description}</p>
+              <p className="text-xs text-slate-600 mt-1">
                 Vence em {formatDate(item.dueDate)}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-bold text-slate-900">
                 {formatCurrency(item.amount)}
               </span>
               {isUrgent && (
-                <Badge variant="destructive" className="text-xs">
+                <Badge variant="destructive" className="text-xs font-medium">
                   Vencido
                 </Badge>
               )}
               {isWarning && (
-                <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 text-xs">
+                <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200 text-xs font-medium">
                   {daysUntil}d
                 </Badge>
               )}
@@ -138,44 +154,155 @@ function UpcomingPaymentsList({ items, type }: { items: (AccountPayable | Accoun
 }
 
 export default function Dashboard() {
+  const [startDate, setStartDate] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+  });
+  const [period, setPeriod] = useState('current');
+
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ["/api/dashboard/stats"],
+    queryKey: ["/api/dashboard/stats", { startDate, endDate }],
+    queryFn: async () => {
+      const response = await fetch(`/api/dashboard/stats?startDate=${startDate}&endDate=${endDate}`);
+      if (!response.ok) throw new Error('Erro ao buscar estatísticas');
+      return response.json();
+    },
   });
 
   const { data: cashFlow, isLoading: cashFlowLoading } = useQuery<CashFlowData[]>({
-    queryKey: ["/api/dashboard/cash-flow"],
+    queryKey: ["/api/dashboard/cash-flow", { startDate, endDate }],
+    queryFn: async () => {
+      const response = await fetch(`/api/dashboard/cash-flow?startDate=${startDate}&endDate=${endDate}`);
+      if (!response.ok) throw new Error('Erro ao buscar fluxo de caixa');
+      return response.json();
+    },
   });
 
   const { data: categoryExpenses, isLoading: expensesLoading } = useQuery<CategoryExpense[]>({
-    queryKey: ["/api/dashboard/category-expenses"],
+    queryKey: ["/api/dashboard/category-expenses", { startDate, endDate }],
+    queryFn: async () => {
+      const response = await fetch(`/api/dashboard/category-expenses?startDate=${startDate}&endDate=${endDate}`);
+      if (!response.ok) throw new Error('Erro ao buscar despesas por categoria');
+      return response.json();
+    },
   });
 
   const { data: upcomingPayables, isLoading: payablesLoading } = useQuery<AccountPayable[]>({
-    queryKey: ["/api/accounts-payable/upcoming"],
+    queryKey: ["/api/accounts-payable/upcoming", { startDate, endDate }],
+    queryFn: async () => {
+      const response = await fetch(`/api/accounts-payable/upcoming?startDate=${startDate}&endDate=${endDate}`);
+      if (!response.ok) throw new Error('Erro ao buscar contas a pagar');
+      return response.json();
+    },
   });
 
   const { data: upcomingReceivables, isLoading: receivablesLoading } = useQuery<AccountReceivable[]>({
-    queryKey: ["/api/accounts-receivable/upcoming"],
+    queryKey: ["/api/accounts-receivable/upcoming", { startDate, endDate }],
+    queryFn: async () => {
+      const response = await fetch(`/api/accounts-receivable/upcoming?startDate=${startDate}&endDate=${endDate}`);
+      if (!response.ok) throw new Error('Erro ao buscar contas a receber');
+      return response.json();
+    },
   });
 
+  const handlePeriodChange = (newPeriod: string) => {
+    setPeriod(newPeriod);
+    const now = new Date();
+    let start = new Date();
+    let end = new Date();
+    
+    switch (newPeriod) {
+      case 'current':
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case 'last':
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        end = new Date(now.getFullYear(), now.getMonth(), 0);
+        break;
+      case 'quarter':
+        const quarterStart = Math.floor(now.getMonth() / 3) * 3;
+        start = new Date(now.getFullYear(), quarterStart, 1);
+        end = new Date(now.getFullYear(), quarterStart + 3, 0);
+        break;
+      case 'year':
+        start = new Date(now.getFullYear(), 0, 1);
+        end = new Date(now.getFullYear(), 11, 31);
+        break;
+    }
+    
+    setStartDate(start.toISOString().split('T')[0]);
+    setEndDate(end.toISOString().split('T')[0]);
+  };
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" data-testid="text-page-title">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Visão geral das suas finanças
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent" data-testid="text-page-title">Dashboard</h1>
+          <p className="text-muted-foreground mt-2">
+            Visão geral das suas finanças e métricas de desempenho
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Período: {formatDate(startDate)} - {formatDate(endDate)}
           </p>
         </div>
+        
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Período:</Label>
+              </div>
+              
+              <Select value={period} onValueChange={handlePeriodChange}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current">Mês Atual</SelectItem>
+                  <SelectItem value="last">Mês Anterior</SelectItem>
+                  <SelectItem value="quarter">Trimestre</SelectItem>
+                  <SelectItem value="year">Ano</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium">De:</Label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-36"
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium">Até:</Label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-36"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statsLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <Card key={i} className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
                 <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-8 w-8 rounded-lg" />
               </CardHeader>
               <CardContent>
                 <Skeleton className="h-8 w-32" />
@@ -208,7 +335,7 @@ export default function Dashboard() {
             <KPICard
               title="Saldo Projetado"
               value={formatCurrency(stats?.projectedBalance || 0)}
-              icon={Wallet}
+              icon={Target}
             />
           </>
         )}
@@ -216,29 +343,33 @@ export default function Dashboard() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {(stats?.overduePayables || 0) > 0 && (
-          <Card className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900">
-            <CardContent className="flex items-center gap-3 p-4">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
+          <Card className="bg-gradient-to-br from-red-50 to-red-100 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardContent className="flex items-center gap-4 p-4">
+              <div className="h-10 w-10 rounded-full bg-red-500 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-white" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                <p className="text-sm font-semibold text-red-800">
                   {stats?.overduePayables} contas a pagar vencidas
                 </p>
-                <p className="text-xs text-red-600 dark:text-red-400">
-                  Regularize para evitar juros
+                <p className="text-xs text-red-600 mt-1">
+                  Regularize para evitar juros e multas
                 </p>
               </div>
             </CardContent>
           </Card>
         )}
         {(stats?.overdueReceivables || 0) > 0 && (
-          <Card className="bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900">
-            <CardContent className="flex items-center gap-3 p-4">
-              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardContent className="flex items-center gap-4 p-4">
+              <div className="h-10 w-10 rounded-full bg-amber-500 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-white" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                <p className="text-sm font-semibold text-amber-800">
                   {stats?.overdueReceivables} contas a receber vencidas
                 </p>
-                <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                <p className="text-xs text-amber-600 mt-1">
                   Entre em contato com os clientes
                 </p>
               </div>
@@ -246,14 +377,16 @@ export default function Dashboard() {
           </Card>
         )}
         {(stats?.dueTodayCount || 0) > 0 && (
-          <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
-            <CardContent className="flex items-center gap-3 p-4">
-              <Calendar className="h-5 w-5 text-blue-600" />
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardContent className="flex items-center gap-4 p-4">
+              <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-white" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                <p className="text-sm font-semibold text-blue-800">
                   {stats?.dueTodayCount} contas vencem hoje
                 </p>
-                <p className="text-xs text-blue-600 dark:text-blue-400">
+                <p className="text-xs text-blue-600 mt-1">
                   Verifique os pagamentos do dia
                 </p>
               </div>
@@ -263,9 +396,9 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Fluxo de Caixa</CardTitle>
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold text-slate-900">Fluxo de Caixa</CardTitle>
           </CardHeader>
           <CardContent>
             {cashFlowLoading ? (
@@ -323,16 +456,19 @@ export default function Dashboard() {
               </ResponsiveContainer>
             ) : (
               <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
-                <TrendingUp className="h-12 w-12 mb-2" />
-                <p>Sem dados de fluxo de caixa</p>
+                <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                  <TrendingUp className="h-8 w-8 text-slate-400" />
+                </div>
+                <p className="font-medium">Sem dados de fluxo de caixa</p>
+                <p className="text-sm text-muted-foreground mt-1">Adicione transações para visualizar o gráfico</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Despesas por Categoria</CardTitle>
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold text-slate-900">Despesas por Categoria</CardTitle>
           </CardHeader>
           <CardContent>
             {expensesLoading ? (
@@ -383,8 +519,11 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
-                <BarChart3 className="h-12 w-12 mb-2" />
-                <p>Sem dados de despesas</p>
+                <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                  <BarChart3 className="h-8 w-8 text-slate-400" />
+                </div>
+                <p className="font-medium">Sem dados de despesas</p>
+                <p className="text-sm text-muted-foreground mt-1">Registre despesas para ver a distribuição</p>
               </div>
             )}
           </CardContent>
@@ -392,9 +531,9 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Contas a Pagar Próximas</CardTitle>
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold text-slate-900">Contas a Pagar Próximas</CardTitle>
           </CardHeader>
           <CardContent>
             {payablesLoading ? (
@@ -409,9 +548,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Contas a Receber Próximas</CardTitle>
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold text-slate-900">Contas a Receber Próximas</CardTitle>
           </CardHeader>
           <CardContent>
             {receivablesLoading ? (
@@ -429,5 +568,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-import { BarChart3 } from "lucide-react";

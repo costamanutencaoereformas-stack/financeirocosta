@@ -8,12 +8,22 @@ import {
   Search,
   Filter,
   MoreHorizontal,
-  Pencil,
+  Edit,
   Trash2,
   CheckCircle,
   Upload,
   Calendar,
   Building2,
+  TrendingUp,
+  AlertTriangle,
+  DollarSign,
+  Clock,
+  Percent,
+  CreditCard,
+  FileText,
+  Banknote,
+  Wallet,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,20 +78,33 @@ const accountPayableFormSchema = z.object({
   description: z.string().min(1, "Descrição é obrigatória"),
   amount: z.string().min(1, "Valor é obrigatório"),
   dueDate: z.string().min(1, "Data de vencimento é obrigatória"),
-  supplierId: z.string().optional(),
-  categoryId: z.string().optional(),
-  costCenterId: z.string().optional(),
+  lateFees: z.string().optional(),
+  supplierId: z.string().min(1, "Fornecedor é obrigatório"),
+  categoryId: z.string().min(1, "Categoria é obrigatória"),
+  costCenterId: z.string().min(1, "Centro de Custo é obrigatório"),
+  paymentMethod: z.string().min(1, "Meio de pagamento é obrigatório"),
   notes: z.string().optional(),
   recurrence: z.string().optional(),
 });
 
 type AccountPayableFormData = z.infer<typeof accountPayableFormSchema>;
 
+const paymentFormSchema = z.object({
+  lateFees: z.string().optional(),
+  paymentDate: z.string().min(1, "Data de pagamento é obrigatória"),
+});
+
+type PaymentFormData = z.infer<typeof paymentFormSchema>;
+
 export default function AccountsPayable() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<AccountPayable | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [activeFilter, setActiveFilter] = useState<string>("active");
+  const [dateFilter, setDateFilter] = useState<{ start: string; end: string }>({ start: "", end: "" });
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [accountToPay, setAccountToPay] = useState<AccountPayable | null>(null);
   const { toast } = useToast();
 
   const { data: accounts, isLoading } = useQuery<AccountPayable[]>({
@@ -109,8 +132,18 @@ export default function AccountsPayable() {
       supplierId: "",
       categoryId: "",
       costCenterId: "",
+      paymentMethod: "",
+      lateFees: "",
       notes: "",
       recurrence: "none",
+    },
+  });
+
+  const paymentForm = useForm<PaymentFormData>({
+    resolver: zodResolver(paymentFormSchema),
+    defaultValues: {
+      lateFees: "",
+      paymentDate: new Date().toISOString().split("T")[0],
     },
   });
 
@@ -122,6 +155,8 @@ export default function AccountsPayable() {
         supplierId: data.supplierId || null,
         categoryId: data.categoryId || null,
         costCenterId: data.costCenterId || null,
+        paymentMethod: data.paymentMethod || null,
+        lateFees: data.lateFees || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accounts-payable"] });
@@ -150,6 +185,8 @@ export default function AccountsPayable() {
         supplierId: data.supplierId || null,
         categoryId: data.categoryId || null,
         costCenterId: data.costCenterId || null,
+        paymentMethod: data.paymentMethod || null,
+        lateFees: data.lateFees || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accounts-payable"] });
@@ -172,32 +209,37 @@ export default function AccountsPayable() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/accounts-payable/${id}`),
+    mutationFn: (id: string) =>
+      apiRequest("PATCH", `/api/accounts-payable/${id}/deactivate`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accounts-payable"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       toast({
         title: "Sucesso",
-        description: "Conta excluída com sucesso.",
+        description: "Conta desativada com sucesso.",
       });
     },
     onError: () => {
       toast({
         title: "Erro",
-        description: "Não foi possível excluir a conta.",
+        description: "Não foi possível desativar a conta.",
         variant: "destructive",
       });
     },
   });
 
   const markAsPaidMutation = useMutation({
-    mutationFn: (id: string) =>
-      apiRequest("PATCH", `/api/accounts-payable/${id}/pay`, {
-        paymentDate: new Date().toISOString().split("T")[0],
+    mutationFn: (data: { id: string; lateFees?: string; paymentDate: string }) =>
+      apiRequest("PATCH", `/api/accounts-payable/${data.id}/pay`, {
+        paymentDate: data.paymentDate,
+        lateFees: data.lateFees || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accounts-payable"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      setPaymentDialogOpen(false);
+      setAccountToPay(null);
+      paymentForm.reset();
       toast({
         title: "Sucesso",
         description: "Conta marcada como paga.",
@@ -220,6 +262,33 @@ export default function AccountsPayable() {
     }
   };
 
+  const handlePaymentSubmit = (data: PaymentFormData) => {
+    if (accountToPay) {
+      markAsPaidMutation.mutate({
+        id: accountToPay.id,
+        lateFees: data.lateFees,
+        paymentDate: data.paymentDate,
+      });
+    }
+  };
+
+  const handleMarkAsPaid = (account: AccountPayable) => {
+    setAccountToPay(account);
+    paymentForm.reset({
+      lateFees: account.lateFees || "",
+      paymentDate: new Date().toISOString().split("T")[0],
+    });
+    setPaymentDialogOpen(true);
+  };
+
+  const handlePaymentDialogOpenChange = (open: boolean) => {
+    setPaymentDialogOpen(open);
+    if (!open) {
+      setAccountToPay(null);
+      paymentForm.reset();
+    }
+  };
+
   const handleEdit = (account: AccountPayable) => {
     setEditingAccount(account);
     form.reset({
@@ -229,9 +298,29 @@ export default function AccountsPayable() {
       supplierId: account.supplierId || "",
       categoryId: account.categoryId || "",
       costCenterId: account.costCenterId || "",
+      paymentMethod: account.paymentMethod || "",
+      lateFees: account.lateFees || "",
       notes: account.notes || "",
       recurrence: account.recurrence || "none",
     });
+    setIsOpen(true);
+  };
+
+  const handleClone = (account: AccountPayable) => {
+    const clonedAccount = {
+      description: `${account.description} (Cópia)`,
+      amount: account.amount,
+      dueDate: account.dueDate,
+      supplierId: account.supplierId || "",
+      categoryId: account.categoryId || "",
+      costCenterId: account.costCenterId || "",
+      paymentMethod: account.paymentMethod || "",
+      lateFees: account.lateFees || "",
+      notes: account.notes || "",
+      recurrence: account.recurrence || "none",
+    };
+    
+    form.reset(clonedAccount);
     setIsOpen(true);
   };
 
@@ -244,19 +333,40 @@ export default function AccountsPayable() {
   };
 
   const filteredAccounts = accounts?.filter((account) => {
-    const matchesSearch = account.description
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    const matchesSearch = account.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const isOverdueAccount = isOverdue(account.dueDate, account.status);
+    const displayStatus = isOverdueAccount ? "overdue" : account.status;
     
-    let actualStatus = account.status;
-    if (actualStatus === "pending" && isOverdue(account.dueDate, account.status)) {
-      actualStatus = "overdue";
-    }
+    const matchesStatus = statusFilter === "all" || displayStatus === statusFilter;
+    const matchesActive = activeFilter === "all" || (activeFilter === "active" && account.active !== false) || (activeFilter === "inactive" && account.active === false);
     
-    const matchesStatus =
-      statusFilter === "all" || actualStatus === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+    // Date range filter
+    const matchesDateRange = (!dateFilter.start || account.dueDate >= dateFilter.start) &&
+                             (!dateFilter.end || account.dueDate <= dateFilter.end);
+    
+    return matchesSearch && matchesStatus && matchesActive && matchesDateRange;
+  }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()) || [];
+
+  // Calculate statistics
+  const stats = accounts ? {
+    total: accounts.reduce((sum, acc) => sum + parseFloat(acc.amount), 0),
+    pending: accounts.filter(acc => acc.status === "pending").reduce((sum, acc) => sum + parseFloat(acc.amount), 0),
+    paid: accounts.filter(acc => acc.status === "paid").reduce((sum, acc) => sum + parseFloat(acc.amount), 0),
+    overdue: accounts.filter(acc => isOverdue(acc.dueDate, acc.status)).reduce((sum, acc) => sum + parseFloat(acc.amount), 0),
+    overdueCount: accounts.filter(acc => isOverdue(acc.dueDate, acc.status)).length,
+    pendingCount: accounts.filter(acc => acc.status === "pending").length,
+    paidCount: accounts.filter(acc => acc.status === "paid").length,
+    totalLateFees: accounts.reduce((sum, acc) => sum + (acc.lateFees && acc.lateFees !== null ? parseFloat(acc.lateFees) : 0), 0),
+  } : {
+    total: 0,
+    pending: 0,
+    paid: 0,
+    overdue: 0,
+    overdueCount: 0,
+    pendingCount: 0,
+    paidCount: 0,
+    totalLateFees: 0,
+  };
 
   const expenseCategories = categories?.filter((c) => c.type === "expense");
 
@@ -276,9 +386,9 @@ export default function AccountsPayable() {
               Nova Conta
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-xl">
                 {editingAccount ? "Editar Conta a Pagar" : "Nova Conta a Pagar"}
               </DialogTitle>
               <DialogDescription>
@@ -286,191 +396,284 @@ export default function AccountsPayable() {
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrição *</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Ex: Aluguel do escritório"
-                          {...field}
-                          data-testid="input-description"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                {/* Main Information Section */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Informações Principais
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-blue-900 font-medium">Descrição *</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Ex: Aluguel do escritório"
+                              {...field}
+                              data-testid="input-description"
+                              className="bg-white border-blue-300"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-blue-900 font-medium">Valor *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="0,00"
+                              {...field}
+                              data-testid="input-amount"
+                              className="bg-white border-blue-300"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="dueDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-blue-900 font-medium">Data de Vencimento *</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} data-testid="input-due-date" className="bg-white border-blue-300" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="lateFees"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-blue-900 font-medium">Juros / Multa</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="0,00"
+                              {...field}
+                              data-testid="input-late-fees"
+                              className="bg-white border-blue-300"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Financial Details Section */}
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                  <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Detalhes Financeiros
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="supplierId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-green-900 font-medium">Fornecedor *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-supplier" className="bg-white border-green-300">
+                                <SelectValue placeholder="Selecione um fornecedor" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {suppliers?.map((supplier) => (
+                                <SelectItem key={supplier.id} value={supplier.id}>
+                                  {supplier.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="categoryId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-green-900 font-medium">Categoria *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-category" className="bg-white border-green-300">
+                                <SelectValue placeholder="Selecione uma categoria" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {expenseCategories?.map((category) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="costCenterId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-green-900 font-medium">Centro de Custo *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-cost-center" className="bg-white border-green-300">
+                                <SelectValue placeholder="Selecione um centro de custo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {costCenters?.map((cc) => (
+                                <SelectItem key={cc.id} value={cc.id}>
+                                  {cc.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Additional Information Section */}
+                <div className="bg-gradient-to-r from-purple-50 to-violet-50 p-4 rounded-lg border border-purple-200">
+                  <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Informações Adicionais
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="paymentMethod"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-purple-900 font-medium">Meio de Pagamento *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-payment-method" className="bg-white border-purple-300">
+                                <SelectValue placeholder="Selecione o meio de pagamento" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="boleto">
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4" />
+                                  Boleto
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="credit_card">
+                                <div className="flex items-center gap-2">
+                                  <CreditCard className="h-4 w-4" />
+                                  Cartão de Crédito
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="debit_card">
+                                <div className="flex items-center gap-2">
+                                  <CreditCard className="h-4 w-4" />
+                                  Cartão de Débito
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="cash">
+                                <div className="flex items-center gap-2">
+                                  <Banknote className="h-4 w-4" />
+                                  Dinheiro
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="transfer">
+                                <div className="flex items-center gap-2">
+                                  <Wallet className="h-4 w-4" />
+                                  Transferência Bancária
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="pix">
+                                <div className="flex items-center gap-2">
+                                  <Wallet className="h-4 w-4" />
+                                  PIX
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="recurrence"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-purple-900 font-medium">Recorrência</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-recurrence" className="bg-white border-purple-300">
+                                <SelectValue placeholder="Sem recorrência" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="none">Sem recorrência</SelectItem>
+                              <SelectItem value="weekly">Semanal</SelectItem>
+                              <SelectItem value="monthly">Mensal</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <FormField
                     control={form.control}
-                    name="amount"
+                    name="notes"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Valor *</FormLabel>
+                      <FormItem className="mt-4">
+                        <FormLabel className="text-purple-900 font-medium">Observações</FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0,00"
+                          <Textarea
+                            placeholder="Informações adicionais..."
                             {...field}
-                            data-testid="input-amount"
+                            data-testid="input-notes"
+                            className="bg-white border-purple-300 min-h-[100px]"
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="dueDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Data de Vencimento *</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} data-testid="input-due-date" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="supplierId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fornecedor</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-supplier">
-                              <SelectValue placeholder="Selecione um fornecedor" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {suppliers?.map((supplier) => (
-                              <SelectItem key={supplier.id} value={supplier.id}>
-                                {supplier.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="categoryId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Categoria</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-category">
-                              <SelectValue placeholder="Selecione uma categoria" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {expenseCategories?.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="costCenterId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Centro de Custo</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-cost-center">
-                              <SelectValue placeholder="Selecione um centro de custo" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {costCenters?.map((cc) => (
-                              <SelectItem key={cc.id} value={cc.id}>
-                                {cc.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="recurrence"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Recorrência</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-recurrence">
-                              <SelectValue placeholder="Sem recorrência" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">Sem recorrência</SelectItem>
-                            <SelectItem value="weekly">Semanal</SelectItem>
-                            <SelectItem value="monthly">Mensal</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Observações</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Informações adicionais..."
-                          {...field}
-                          data-testid="input-notes"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
+
+                <DialogFooter className="flex gap-2 pt-4">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => handleOpenChange(false)}
                     data-testid="button-cancel"
+                    className="px-6"
                   >
                     Cancelar
                   </Button>
@@ -478,6 +681,7 @@ export default function AccountsPayable() {
                     type="submit"
                     disabled={createMutation.isPending || updateMutation.isPending}
                     data-testid="button-submit"
+                    className="px-6"
                   >
                     {createMutation.isPending || updateMutation.isPending
                       ? "Salvando..."
@@ -492,33 +696,232 @@ export default function AccountsPayable() {
         </Dialog>
       </div>
 
+      {/* Payment Dialog */}
+      <Dialog open={paymentDialogOpen} onOpenChange={handlePaymentDialogOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              Confirmar Pagamento
+            </DialogTitle>
+            <DialogDescription>
+              {accountToPay && (
+                <span>
+                  Registrar pagamento para: <strong>{accountToPay.description}</strong>
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...paymentForm}>
+            <form onSubmit={paymentForm.handleSubmit(handlePaymentSubmit)} className="space-y-4">
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p>Valor original: <strong>{accountToPay && formatCurrency(accountToPay.amount)}</strong></p>
+                  <p>Data de vencimento: <strong>{accountToPay && formatDate(accountToPay.dueDate)}</strong></p>
+                </div>
+              </div>
+              
+              <FormField
+                control={paymentForm.control}
+                name="paymentDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Pagamento *</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} className="bg-white" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={paymentForm.control}
+                name="lateFees"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Juros / Multa (se aplicável)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0,00"
+                        {...field}
+                        className="bg-white"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter className="flex gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handlePaymentDialogOpenChange(false)}
+                  className="px-6"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={markAsPaidMutation.isPending}
+                  className="px-6 bg-green-600 hover:bg-green-700"
+                >
+                  {markAsPaidMutation.isPending
+                    ? "Processando..."
+                    : "Confirmar Pagamento"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-600">Total</p>
+                <p className="text-2xl font-bold text-blue-900">{formatCurrency(stats.total)}</p>
+                <p className="text-xs text-blue-600 mt-1">{accounts?.length || 0} contas</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-orange-600">Pendentes</p>
+                <p className="text-2xl font-bold text-orange-900">{formatCurrency(stats.pending)}</p>
+                <p className="text-xs text-orange-600 mt-1">{stats.pendingCount} contas</p>
+              </div>
+              <Clock className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-600">Pagos</p>
+                <p className="text-2xl font-bold text-green-900">{formatCurrency(stats.paid)}</p>
+                <p className="text-xs text-green-600 mt-1">{stats.paidCount} contas</p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-red-600">Vencidos</p>
+                <p className="text-2xl font-bold text-red-900">{formatCurrency(stats.overdue)}</p>
+                <p className="text-xs text-red-600 mt-1">{stats.overdueCount} contas</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-red-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-purple-600">Juros/Multa</p>
+                <p className="text-2xl font-bold text-purple-900">{formatCurrency(stats.totalLateFees)}</p>
+                <p className="text-xs text-purple-600 mt-1">Valor total registrado</p>
+              </div>
+              <Percent className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle className="text-lg">Lista de Contas</CardTitle>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Contas a Pagar</h1>
+              <p className="text-gray-600 mt-1">Gerencie suas contas e pagamentos</p>
+            </div>
+            <Button
+              onClick={() => {
+                setEditingAccount(null);
+                form.reset();
+                setIsOpen(true);
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+              data-testid="button-new-account"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Conta
+            </Button>
+          </div>
+
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Buscar contas..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                    data-testid="input-search"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Select value={activeFilter} onValueChange={setActiveFilter}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Status da Conta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Ativas</SelectItem>
+                    <SelectItem value="inactive">Inativas</SelectItem>
+                    <SelectItem value="all">Todas</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filtrar por status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os status</SelectItem>
+                    <SelectItem value="pending">Pendentes</SelectItem>
+                    <SelectItem value="paid">Pagos</SelectItem>
+                    <SelectItem value="overdue">Vencidos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
                 <Input
-                  placeholder="Buscar..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 w-[200px]"
-                  data-testid="input-search"
+                  type="date"
+                  placeholder="Data Início"
+                  value={dateFilter.start}
+                  onChange={(e) => setDateFilter(prev => ({ ...prev, start: e.target.value }))}
+                  className="w-[150px]"
+                />
+                <span className="text-sm text-muted-foreground">até</span>
+                <Input
+                  type="date"
+                  placeholder="Data Fim"
+                  value={dateFilter.end}
+                  onChange={(e) => setDateFilter(prev => ({ ...prev, end: e.target.value }))}
+                  className="w-[150px]"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px]" data-testid="select-status-filter">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="pending">Pendentes</SelectItem>
-                  <SelectItem value="paid">Pagos</SelectItem>
-                  <SelectItem value="overdue">Vencidos</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
         </CardHeader>
@@ -539,6 +942,8 @@ export default function AccountsPayable() {
                     <TableHead>Categoria</TableHead>
                     <TableHead>Vencimento</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
+                    <TableHead className="text-right">Juros/Multa</TableHead>
+                    <TableHead>Data Pagamento</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
@@ -583,6 +988,25 @@ export default function AccountsPayable() {
                         <TableCell className="text-right font-semibold">
                           {formatCurrency(account.amount)}
                         </TableCell>
+                        <TableCell className="text-right">
+                          {account.lateFees && account.lateFees !== null ? (
+                            <span className="text-orange-600 font-medium">
+                              {formatCurrency(account.lateFees)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {account.paymentDate ? (
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-green-600" />
+                              <span className="text-green-600">{formatDate(account.paymentDate)}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(displayStatus)}>
                             {getStatusLabel(displayStatus)}
@@ -596,9 +1020,16 @@ export default function AccountsPayable() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handleClone(account)}
+                                data-testid={`button-clone-${account.id}`}
+                              >
+                                <Copy className="h-4 w-4 mr-2" />
+                                Clonar Lançamento
+                              </DropdownMenuItem>
                               {account.status !== "paid" && (
                                 <DropdownMenuItem
-                                  onClick={() => markAsPaidMutation.mutate(account.id)}
+                                  onClick={() => handleMarkAsPaid(account)}
                                   data-testid={`button-mark-paid-${account.id}`}
                                 >
                                   <CheckCircle className="h-4 w-4 mr-2" />
@@ -608,17 +1039,25 @@ export default function AccountsPayable() {
                               <DropdownMenuItem
                                 onClick={() => handleEdit(account)}
                                 data-testid={`button-edit-${account.id}`}
+                                disabled={account.status === "paid"}
                               >
-                                <Pencil className="h-4 w-4 mr-2" />
+                                <Edit className="h-4 w-4 mr-2" />
                                 Editar
+                                {account.status === "paid" && (
+                                  <span className="ml-2 text-xs text-gray-400">(Não disponível)</span>
+                                )}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => deleteMutation.mutate(account.id)}
-                                className="text-destructive"
                                 data-testid={`button-delete-${account.id}`}
+                                className="text-red-600"
+                                disabled={account.status === "paid"}
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
-                                Excluir
+                                Desativar
+                                {account.status === "paid" && (
+                                  <span className="ml-2 text-xs text-gray-400">(Não disponível)</span>
+                                )}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
