@@ -14,10 +14,10 @@ import { Plus, UserCog, Trash2, Edit, Loader2, Users, Shield, Eye, Pencil } from
 
 interface User {
   id: string;
-  username: string;
-  name: string;
+  fullName: string;
   role: string;
-  active: boolean;
+  status: string;
+  team: string;
 }
 
 const roleLabels: Record<string, string> = {
@@ -38,10 +38,9 @@ export default function UsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-    name: "",
+    fullName: "",
     role: "viewer",
+    team: "",
   });
 
   const { data: users = [], isLoading } = useQuery<User[]>({
@@ -50,7 +49,7 @@ export default function UsersPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      await register(data.username, data.password, data.name, data.role);
+      await register(data.fullName, data.role);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -59,7 +58,7 @@ export default function UsersPage() {
       toast({ title: "Usuário criado com sucesso!" });
     },
     onError: () => {
-      toast({ title: "Erro ao criar usuário", variant: "destructive" });
+      toast({ title: "Erro ao criar usuário", variant: "destructive", description: "Criação desativada temporariamente." });
     },
   });
 
@@ -93,16 +92,15 @@ export default function UsersPage() {
   });
 
   function resetForm() {
-    setFormData({ username: "", password: "", name: "", role: "viewer" });
+    setFormData({ fullName: "", role: "viewer", team: "" });
   }
 
   function handleEdit(user: User) {
     setEditingUser(user);
     setFormData({
-      username: user.username,
-      password: "",
-      name: user.name,
+      fullName: user.fullName,
       role: user.role,
+      team: user.team || "",
     });
     setIsDialogOpen(true);
   }
@@ -110,11 +108,7 @@ export default function UsersPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (editingUser) {
-      const updateData: any = { name: formData.name, role: formData.role };
-      if (formData.password) {
-        updateData.password = formData.password;
-      }
-      updateMutation.mutate({ id: editingUser.id, data: updateData });
+      updateMutation.mutate({ id: editingUser.id, data: formData });
     } else {
       createMutation.mutate(formData);
     }
@@ -167,7 +161,7 @@ export default function UsersPage() {
                 {editingUser ? "Editar Usuário" : "Novo Usuário"}
               </DialogTitle>
               <DialogDescription>
-                {editingUser 
+                {editingUser
                   ? "Atualize os dados do usuário"
                   : "Preencha os dados para criar um novo usuário"}
               </DialogDescription>
@@ -178,33 +172,9 @@ export default function UsersPage() {
                 <Input
                   id="name"
                   data-testid="input-user-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="username">Usuário</Label>
-                <Input
-                  id="username"
-                  data-testid="input-user-username"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  disabled={!!editingUser}
-                  required={!editingUser}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">
-                  {editingUser ? "Nova Senha (deixe em branco para manter)" : "Senha"}
-                </Label>
-                <Input
-                  id="password"
-                  data-testid="input-user-password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required={!editingUser}
                 />
               </div>
               <div className="space-y-2">
@@ -223,6 +193,14 @@ export default function UsersPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="team">Time / Equipe</Label>
+                <Input
+                  id="team"
+                  value={formData.team}
+                  onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                />
+              </div>
               <div className="flex justify-end gap-2">
                 <Button
                   type="button"
@@ -231,7 +209,7 @@ export default function UsersPage() {
                 >
                   Cancelar
                 </Button>
-                <Button 
+                <Button
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending}
                   data-testid="button-save-user"
@@ -264,8 +242,8 @@ export default function UsersPage() {
                         <UserCog className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <CardTitle className="text-base">{user.name}</CardTitle>
-                        <CardDescription>@{user.username}</CardDescription>
+                        <CardTitle className="text-base">{user.fullName}</CardTitle>
+                        <CardDescription>{user.team || user.status || "Sem time"}</CardDescription>
                       </div>
                     </div>
                     <Badge variant={user.role === "admin" ? "default" : "secondary"}>

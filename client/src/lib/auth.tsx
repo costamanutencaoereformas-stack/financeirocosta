@@ -3,9 +3,10 @@ import { apiRequest } from "./queryClient";
 
 interface User {
   id: string;
-  username: string;
-  name: string;
+  fullName: string | null;
   role: "admin" | "financial" | "viewer";
+  status: string | null;
+  team: string | null;
 }
 
 interface AuthContextType {
@@ -13,7 +14,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (username: string, password: string, name: string, role?: string) => Promise<void>;
+  register: (name: string, role?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function login(username: string, password: string) {
+    // Legacy generic login - might need update for Supabase
     const response = await apiRequest("POST", "/api/auth/login", { username, password });
     const data = await response.json();
     setUser(data.user);
@@ -50,8 +52,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
-  async function register(username: string, password: string, name: string, role?: string) {
-    const response = await apiRequest("POST", "/api/auth/register", { username, password, name, role });
+  async function register(name: string, role?: string) {
+    // Adjusted to not require password/username if creating generic profiles
+    // But endpoint is disabled on backend
+    const response = await apiRequest("POST", "/api/auth/register", { name, role });
     const data = await response.json();
     if (!user) {
       setUser(data.user);

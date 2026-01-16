@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import passport from "passport";
 import { storage } from "./storage";
-import { setupAuth, hashPassword, requireAuth, requireAdmin, requireFinancial, requireViewer } from "./auth";
+import { setupAuth, requireAuth, requireAdmin, requireFinancial, requireViewer } from "./auth";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -10,6 +10,8 @@ export async function registerRoutes(
 ): Promise<Server> {
   setupAuth(app);
 
+  // Legacy local auth routes disabled - moving to Supabase Auth
+  /*
   app.post("/api/auth/login", (req, res, next) => {
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) return next(err);
@@ -22,6 +24,7 @@ export async function registerRoutes(
       });
     })(req, res, next);
   });
+  */
 
   app.post("/api/auth/logout", (req, res) => {
     req.logout(() => {
@@ -36,61 +39,31 @@ export async function registerRoutes(
     res.json({
       user: {
         id: req.user!.id,
-        username: req.user!.username,
-        name: req.user!.name,
-        role: req.user!.role
+        fullName: req.user!.fullName,
+        role: req.user!.role,
+        status: req.user!.status,
+        team: req.user!.team
       }
     });
   });
 
+  /*
   app.post("/api/auth/register", async (req, res) => {
-    try {
-      const existingUsers = await storage.getUsers();
-      if (existingUsers.length > 0 && !req.isAuthenticated()) {
-        return res.status(401).json({ error: "Apenas administradores podem criar novos usuários" });
-      }
-      if (existingUsers.length > 0 && req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Apenas administradores podem criar novos usuários" });
-      }
-
-      const { username, password, name, role } = req.body;
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ error: "Usuário já existe" });
-      }
-
-      const hashedPassword = await hashPassword(password);
-      const userRole = existingUsers.length === 0 ? "admin" : (role || "viewer");
-
-      const user = await storage.createUser({
-        username,
-        password: hashedPassword,
-        name,
-        role: userRole,
-      });
-
-      res.status(201).json({
-        user: { id: user.id, username: user.username, name: user.name, role: user.role }
-      });
-    } catch (err) {
-      res.status(500).json({ error: "Erro ao criar usuário" });
-    }
+    // Disabled registration via this endpoint for now
+    res.status(501).json({ error: "Registration disabled in favor of Supabase Auth" });
   });
+  */
 
   app.get("/api/users", requireAdmin, async (req, res) => {
     const users = await storage.getUsers();
-    res.json(users.map(u => ({ id: u.id, username: u.username, name: u.name, role: u.role, active: u.active })));
+    res.json(users.map(u => ({ id: u.id, fullName: u.fullName, role: u.role, status: u.status, team: u.team })));
   });
 
   app.patch("/api/users/:id", requireAdmin, async (req, res) => {
-    const { password, ...data } = req.body;
-    let updateData = data;
-    if (password) {
-      updateData.password = await hashPassword(password);
-    }
-    const user = await storage.updateUser(req.params.id, updateData);
+    const data = req.body;
+    const user = await storage.updateUser(req.params.id, data);
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
-    res.json({ id: user.id, username: user.username, name: user.name, role: user.role, active: user.active });
+    res.json({ id: user.id, fullName: user.fullName, role: user.role, status: user.status, team: user.team });
   });
 
   app.delete("/api/users/:id", requireAdmin, async (req, res) => {

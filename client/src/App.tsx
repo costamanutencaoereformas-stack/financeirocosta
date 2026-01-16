@@ -59,7 +59,7 @@ function UserMenu() {
 
   if (!user) return null;
 
-  const initials = user.name
+  const initials = (user.fullName || "U")
     .split(" ")
     .map((n) => n[0])
     .slice(0, 2)
@@ -77,8 +77,8 @@ function UserMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem disabled className="flex flex-col items-start gap-0">
-          <span className="font-medium">{user.name}</span>
-          <span className="text-xs text-muted-foreground">@{user.username}</span>
+          <span className="font-medium">{user.fullName || "Usuário"}</span>
+          <span className="text-xs text-muted-foreground">{user.team || user.role}</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={logout} data-testid="button-logout">
           <LogOut className="h-4 w-4 mr-2" />
