@@ -85,6 +85,7 @@ export function setupAuth(app: Express): void {
 
         return done(null, {
           id: user.id,
+          username: user.username,
           fullName: user.fullName,
           role: user.role,
           status: user.status,
@@ -108,6 +109,7 @@ export function setupAuth(app: Express): void {
       }
       done(null, {
         id: user.id,
+        username: user.username,
         fullName: user.fullName,
         role: user.role,
         status: user.status,
