@@ -30,6 +30,19 @@ import {
   Phone,
   MapPin,
   Search as SearchIcon,
+  Receipt,
+  Paperclip,
+  Calculator,
+  Tag,
+  User,
+  Building,
+  ArrowUpDown,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Grid3X3,
+  List,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,15 +97,30 @@ const accountPayableFormSchema = z.object({
   description: z.string().min(1, "Descrição é obrigatória"),
   amount: z.string().min(1, "Valor é obrigatório"),
   dueDate: z.string().min(1, "Data de vencimento é obrigatória"),
+  issueDate: z.string().optional(),
   lateFees: z.string().optional(),
   discount: z.string().optional(),
   supplierId: z.string().min(1, "Fornecedor é obrigatório"),
   categoryId: z.string().min(1, "Categoria é obrigatória"),
   costCenterId: z.string().min(1, "Centro de Custo é obrigatório"),
   paymentMethod: z.string().min(1, "Meio de pagamento é obrigatório"),
+  invoiceNumber: z.string().optional(),
+  invoiceType: z.string().optional(),
+  taxRate: z.string().optional(),
+  taxAmount: z.string().optional(),
+  netAmount: z.string().optional(),
+  priority: z.string().optional(),
+  department: z.string().optional(),
+  project: z.string().optional(),
+  approvalStatus: z.string().optional(),
+  approvedBy: z.string().optional(),
   notes: z.string().optional(),
+  internalNotes: z.string().optional(),
+  attachment: z.string().optional(),
   recurrence: z.string().optional(),
   recurrenceEnd: z.string().optional(),
+  installments: z.string().optional(),
+  currentInstallment: z.string().optional(),
 });
 
 type AccountPayableFormData = z.infer<typeof accountPayableFormSchema>;
@@ -126,6 +154,7 @@ export default function AccountsPayable() {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [accountToPay, setAccountToPay] = useState<AccountPayable | null>(null);
   const [newSupplierDialogOpen, setNewSupplierDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const { toast } = useToast();
 
   const { data: accounts, isLoading } = useQuery<AccountPayable[]>({
@@ -499,13 +528,13 @@ export default function AccountsPayable() {
               Nova Conta
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl">
                 {editingAccount ? "Editar Conta a Pagar" : "Nova Conta a Pagar"}
               </DialogTitle>
               <DialogDescription>
-                Preencha os dados da conta a pagar
+                Preencha os dados da conta a pagar. Campos com * são obrigatórios. Use a seção "Informações Avançadas" para maior controle e categorização.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -556,7 +585,20 @@ export default function AccountsPayable() {
                       )}
                     />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="issueDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-blue-900 font-medium">Data de Emissão</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} className="bg-white border-blue-300" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="dueDate"
@@ -570,6 +612,25 @@ export default function AccountsPayable() {
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="invoiceNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-blue-900 font-medium">Nº da Fatura</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="0001/2024"
+                              {...field}
+                              className="bg-white border-blue-300"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <FormField
                       control={form.control}
                       name="lateFees"
@@ -819,6 +880,317 @@ export default function AccountsPayable() {
                             {...field}
                             data-testid="input-notes"
                             className="bg-white border-purple-300 min-h-[100px]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Advanced Information Section */}
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-900 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-100 mb-4 flex items-center gap-2">
+                    <Tag className="h-5 w-5" />
+                    Informações Avançadas
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="priority"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-amber-900 font-medium">Prioridade</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="bg-white border-amber-300">
+                                <SelectValue placeholder="Selecione a prioridade" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="low">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                  Baixa
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="medium">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                  Média
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="high">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                  Alta
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="urgent">
+                                <div className="flex items-center gap-2">
+                                  <AlertCircle className="h-4 w-4 text-red-500" />
+                                  Urgente
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="department"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-amber-900 font-medium">Departamento</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Ex: Administrativo, Produção"
+                              {...field}
+                              className="bg-white border-amber-300"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="project"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-amber-900 font-medium">Projeto</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Ex: Expansão 2024"
+                              {...field}
+                              className="bg-white border-amber-300"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="invoiceType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-amber-900 font-medium">Tipo de Fatura</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="bg-white border-amber-300">
+                                <SelectValue placeholder="Selecione o tipo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="nf">Nota Fiscal</SelectItem>
+                              <SelectItem value="invoice">Fatura</SelectItem>
+                              <SelectItem value="receipt">Recibo</SelectItem>
+                              <SelectItem value="contract">Contrato</SelectItem>
+                              <SelectItem value="other">Outro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="approvalStatus"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-amber-900 font-medium">Status de Aprovação</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="bg-white border-amber-300">
+                                <SelectValue placeholder="Selecione o status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="pending">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4 text-yellow-500" />
+                                  Pendente
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="approved">
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                  Aprovado
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="rejected">
+                                <div className="flex items-center gap-2">
+                                  <X className="h-4 w-4 text-red-500" />
+                                  Rejeitado
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="taxRate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-amber-900 font-medium">Alíquota de Imposto (%)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="0,00"
+                              {...field}
+                              className="bg-white border-amber-300"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="taxAmount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-amber-900 font-medium">Valor do Imposto</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="0,00"
+                              {...field}
+                              className="bg-white border-amber-300"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="netAmount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-amber-900 font-medium">Valor Líquido</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="0,00"
+                              {...field}
+                              className="bg-white border-amber-300"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="installments"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-amber-900 font-medium">Parcelas</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="Ex: 12"
+                              {...field}
+                              className="bg-white border-amber-300"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="currentInstallment"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-amber-900 font-medium">Parcela Atual</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="Ex: 1/12"
+                              {...field}
+                              className="bg-white border-amber-300"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="approvedBy"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-amber-900 font-medium">Aprovado por</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Nome do aprovador"
+                              {...field}
+                              className="bg-white border-amber-300"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="attachment"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-amber-900 font-medium">Anexo</FormLabel>
+                          <FormControl>
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="URL do anexo ou caminho do arquivo"
+                                {...field}
+                                className="bg-white border-amber-300 flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="border-amber-300 hover:bg-amber-50"
+                                title="Anexar arquivo"
+                              >
+                                <Paperclip className="h-4 w-4 text-amber-700" />
+                              </Button>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="internalNotes"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel className="text-amber-900 font-medium">Observações Internas</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Notas internas para equipe..."
+                            {...field}
+                            className="bg-white border-amber-300 min-h-[80px]"
                           />
                         </FormControl>
                         <FormMessage />
@@ -1213,22 +1585,44 @@ export default function AccountsPayable() {
                     className="w-[140px]"
                   />
                 </div>
-                {(searchTerm || statusFilter !== "all" || activeFilter !== "active" || dateFilter.start || dateFilter.end) && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSearchTerm("");
-                      setStatusFilter("all");
-                      setActiveFilter("active");
-                      setDateFilter({ start: "", end: "" });
-                    }}
-                    title="Limpar filtros"
-                    className="mt-4"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1 p-1 bg-muted rounded-lg">
+                    <Button
+                      variant={viewMode === "table" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("table")}
+                      className="h-8 w-8 p-0"
+                      title="Modo Tabela"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === "cards" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setViewMode("cards")}
+                      className="h-8 w-8 p-0"
+                      title="Modo Cards"
+                    >
+                      <Grid3X3 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {(searchTerm || statusFilter !== "all" || activeFilter !== "active" || dateFilter.start || dateFilter.end) && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setStatusFilter("all");
+                        setActiveFilter("active");
+                        setDateFilter({ start: "", end: "" });
+                      }}
+                      title="Limpar filtros"
+                      className="mt-4"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -1241,36 +1635,38 @@ export default function AccountsPayable() {
               ))}
             </div>
           ) : filteredAccounts && filteredAccounts.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Fornecedor</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Vencimento</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                    <TableHead className="text-right">Juros/Multa</TableHead>
-                    <TableHead className="text-right">Desconto</TableHead>
-                    <TableHead className="text-right font-bold">Valor Líquido</TableHead>
-                    <TableHead>Data Pagamento</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAccounts.map((account) => {
-                    const supplier = suppliers?.find((s) => s.id === account.supplierId);
-                    const category = categories?.find((c) => c.id === account.categoryId);
-                    const overdue = isOverdue(account.dueDate, account.status);
-                    const displayStatus = overdue ? "overdue" : account.status;
-                    const amountNum = parseFloat(account.amount?.toString() || "0");
-                    const lateFeesNum = parseFloat(account.lateFees?.toString() || "0");
-                    const discountNum = parseFloat(account.discount?.toString() || "0");
-                    const netValue = amountNum + lateFeesNum - discountNum;
+            <>
+              {viewMode === "table" ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead>Fornecedor</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead>Vencimento</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                        <TableHead className="text-right">Juros/Multa</TableHead>
+                        <TableHead className="text-right">Desconto</TableHead>
+                        <TableHead className="text-right font-bold">Valor Líquido</TableHead>
+                        <TableHead>Data Pagamento</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAccounts.map((account) => {
+                        const supplier = suppliers?.find((s) => s.id === account.supplierId);
+                        const category = categories?.find((c) => c.id === account.categoryId);
+                        const overdue = isOverdue(account.dueDate, account.status);
+                        const displayStatus = overdue ? "overdue" : account.status;
+                        const amountNum = parseFloat(account.amount?.toString() || "0");
+                        const lateFeesNum = parseFloat(account.lateFees?.toString() || "0");
+                        const discountNum = parseFloat(account.discount?.toString() || "0");
+                        const netValue = amountNum + lateFeesNum - discountNum;
 
-                    return (
-                      <TableRow key={account.id} data-testid={`row-payable-${account.id}`}>
+                        return (
+                          <TableRow key={account.id} data-testid={`row-payable-${account.id}`}>
                         <TableCell className="font-medium">
                           {account.description}
                         </TableCell>
@@ -1394,11 +1790,132 @@ export default function AccountsPayable() {
                 </TableBody>
               </Table>
             </div>
+              ) : (
+                // Visualização em Cards
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredAccounts.map((account) => {
+                    const supplier = suppliers?.find((s) => s.id === account.supplierId);
+                    const category = categories?.find((c) => c.id === account.categoryId);
+                    const overdue = isOverdue(account.dueDate, account.status);
+                    const displayStatus = overdue ? "overdue" : account.status;
+                    const amountNum = parseFloat(account.amount?.toString() || "0");
+                    const lateFeesNum = parseFloat(account.lateFees?.toString() || "0");
+                    const discountNum = parseFloat(account.discount?.toString() || "0");
+                    const netValue = amountNum + lateFeesNum - discountNum;
+
+                    return (
+                      <Card key={account.id} className="hover:shadow-lg transition-all duration-200 group">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <Badge className={getStatusColor(displayStatus)}>
+                              {getStatusLabel(displayStatus)}
+                            </Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => handlePay(account)}
+                                  data-testid={`button-pay-${account.id}`}
+                                >
+                                  <DollarSign className="h-4 w-4 mr-2" />
+                                  Pagar Conta
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleEdit(account)}
+                                  data-testid={`button-edit-${account.id}`}
+                                  disabled={account.status === "paid"}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Editar
+                                  {account.status === "paid" && (
+                                    <span className="ml-2 text-xs text-gray-400">(Não disponível)</span>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => deleteMutation.mutate(account.id)}
+                                  data-testid={`button-delete-${account.id}`}
+                                  className="text-red-600"
+                                  disabled={account.status === "paid"}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Desativar
+                                  {account.status === "paid" && (
+                                    <span className="ml-2 text-xs text-gray-400">(Não disponível)</span>
+                                  )}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                          
+                          <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
+                            {account.description}
+                          </h3>
+                          
+                          <div className="space-y-2 mb-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Fornecedor:</span>
+                              <span className="text-sm font-medium">
+                                {supplier ? supplier.name : "-"}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Categoria:</span>
+                              <span className="text-sm font-medium">
+                                {category ? category.name : "-"}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Vencimento:</span>
+                              <span className="text-sm font-medium">{formatDate(account.dueDate)}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="border-t pt-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Valor:</span>
+                              <span className="font-bold text-lg">{formatCurrency(account.amount)}</span>
+                            </div>
+                            
+                            {(lateFeesNum > 0 || discountNum > 0) && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">Acréscimos:</span>
+                                <span className="font-medium text-orange-600">
+                                  {lateFeesNum > 0 && `+${formatCurrency(account.lateFees)}`}
+                                  {discountNum > 0 && ` -${formatCurrency(account.discount)}`}
+                                </span>
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Valor Líquido:</span>
+                              <span className="font-bold text-lg text-green-600">{formatCurrency(netValue.toFixed(2))}</span>
+                            </div>
+                            
+                            {account.paymentDate && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">Pago em:</span>
+                                <span className="text-sm font-medium text-green-600">{formatDate(account.paymentDate)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Building2 className="h-12 w-12 mb-4" />
               <p className="text-lg font-medium">Nenhuma conta encontrada</p>
-              <p className="text-sm">Clique em "Nova Conta" para adicionar</p>
+              <p className="text-sm">Tente ajustar os filtros ou clique em "Nova Conta" para adicionar</p>
             </div>
           )}
         </CardContent>

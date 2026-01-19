@@ -27,6 +27,11 @@ import {
   Phone,
   MapPin,
   Search as SearchIcon,
+  Eye,
+  EyeOff,
+  Grid3X3,
+  List,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -144,6 +149,7 @@ export default function AccountsReceivable() {
   const [receivedDate, setReceivedDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [newClientDialogOpen, setNewClientDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const { toast } = useToast();
 
   const { data: accounts, isLoading } = useQuery<AccountReceivable[]>({
@@ -1034,6 +1040,44 @@ export default function AccountsReceivable() {
                   </Button>
                 )}
               </div>
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1 p-1 bg-muted rounded-lg">
+                  <Button
+                    variant={viewMode === "table" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("table")}
+                    className="h-8 w-8 p-0"
+                    title="Modo Tabela"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === "cards" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("cards")}
+                    className="h-8 w-8 p-0"
+                    title="Modo Cards"
+                  >
+                    <Grid3X3 className="h-4 w-4" />
+                  </Button>
+                </div>
+                {(searchTerm || statusFilter !== "all" || activeFilter !== "active" || dateFilter.start || dateFilter.end) && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setStatusFilter("all");
+                      setActiveFilter("active");
+                      setDateFilter({ start: "", end: "" });
+                    }}
+                    title="Limpar filtros"
+                    className="mt-4"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -1045,35 +1089,37 @@ export default function AccountsReceivable() {
               ))}
             </div>
           ) : filteredAccounts && filteredAccounts.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Vencimento</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                    <TableHead className="text-right">Desconto</TableHead>
-                    <TableHead className="text-right font-bold">Valor Líquido</TableHead>
-                    <TableHead>Forma de Pagto</TableHead>
-                    <TableHead>Data Recebimento</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAccounts.map((account) => {
-                    const client = clients?.find((c) => c.id === account.clientId);
-                    const category = categories?.find((c) => c.id === account.categoryId);
-                    const overdue = isOverdue(account.dueDate, account.status);
-                    const displayStatus = overdue ? "overdue" : account.status;
-                    const amountNum = parseFloat(account.amount?.toString() || "0");
-                    const discountNum = parseFloat(account.discount?.toString() || "0");
-                    const netValue = amountNum - discountNum;
+            <>
+              {viewMode === "table" ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead>Cliente</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead>Vencimento</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                        <TableHead className="text-right">Desconto</TableHead>
+                        <TableHead className="text-right font-bold">Valor Líquido</TableHead>
+                        <TableHead>Forma de Pagto</TableHead>
+                        <TableHead>Data Recebimento</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAccounts.map((account) => {
+                        const client = clients?.find((c) => c.id === account.clientId);
+                        const category = categories?.find((c) => c.id === account.categoryId);
+                        const overdue = isOverdue(account.dueDate, account.status);
+                        const displayStatus = overdue ? "overdue" : account.status;
+                        const amountNum = parseFloat(account.amount?.toString() || "0");
+                        const discountNum = parseFloat(account.discount?.toString() || "0");
+                        const netValue = amountNum - discountNum;
 
-                    return (
-                      <TableRow key={account.id} data-testid={`row-receivable-${account.id}`}>
+                        return (
+                          <TableRow key={account.id} data-testid={`row-receivable-${account.id}`}>
                         <TableCell className="font-medium">
                           {account.description}
                         </TableCell>
@@ -1202,16 +1248,147 @@ export default function AccountsReceivable() {
                 </TableBody>
               </Table>
             </div>
+              ) : (
+                // Visualização em Cards
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredAccounts.map((account) => {
+                    const client = clients?.find((c) => c.id === account.clientId);
+                    const category = categories?.find((c) => c.id === account.categoryId);
+                    const overdue = isOverdue(account.dueDate, account.status);
+                    const displayStatus = overdue ? "overdue" : account.status;
+                    const amountNum = parseFloat(account.amount?.toString() || "0");
+                    const discountNum = parseFloat(account.discount?.toString() || "0");
+                    const netValue = amountNum - discountNum;
+
+                    return (
+                      <Card key={account.id} className="hover:shadow-lg transition-all duration-200 group">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <Badge className={getStatusColor(displayStatus)}>
+                              {getStatusLabel(displayStatus)}
+                            </Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => handleReceive(account)}
+                                  data-testid={`button-receive-${account.id}`}
+                                >
+                                  <DollarSign className="h-4 w-4 mr-2" />
+                                  Receber Conta
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleEdit(account)}
+                                  data-testid={`button-edit-${account.id}`}
+                                  disabled={account.status === "received"}
+                                >
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Editar
+                                  {account.status === "received" && (
+                                    <span className="ml-2 text-xs text-gray-400">(Não disponível)</span>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => deleteMutation.mutate(account.id)}
+                                  data-testid={`button-delete-${account.id}`}
+                                  className="text-red-600"
+                                  disabled={account.status === "received"}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Desativar
+                                  {account.status === "received" && (
+                                    <span className="ml-2 text-xs text-gray-400">(Não disponível)</span>
+                                  )}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                          
+                          <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
+                            {account.description}
+                          </h3>
+                          
+                          <div className="space-y-2 mb-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Cliente:</span>
+                              <span className="text-sm font-medium">
+                                {client ? client.name : "-"}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Categoria:</span>
+                              <span className="text-sm font-medium">
+                                {category ? category.name : "-"}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Vencimento:</span>
+                              <span className="text-sm font-medium">{formatDate(account.dueDate)}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="border-t pt-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Valor:</span>
+                              <span className="font-bold text-lg text-green-600">{formatCurrency(account.amount)}</span>
+                            </div>
+                            
+                            {discountNum > 0 && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">Desconto:</span>
+                                <span className="font-medium text-red-600">-{formatCurrency(account.discount)}</span>
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Valor Líquido:</span>
+                              <span className="font-bold text-lg">{formatCurrency(netValue.toFixed(2))}</span>
+                            </div>
+                            
+                            {account.receivedDate && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">Recebido em:</span>
+                                <span className="text-sm font-medium text-green-600">{formatDate(account.receivedDate)}</span>
+                              </div>
+                            )}
+                            
+                            {account.paymentMethod && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">Forma Pagto:</span>
+                                <Badge variant="outline" className="font-normal capitalize">
+                                  {account.paymentMethod === 'money' ? 'Dinheiro' :
+                                   account.paymentMethod === 'pix' ? 'PIX' :
+                                   account.paymentMethod === 'credit_card' ? 'Cartão de Crédito' :
+                                   account.paymentMethod === 'debit_card' ? 'Cartão de Débito' :
+                                   account.paymentMethod === 'boleto' ? 'Boleto' :
+                                   account.paymentMethod === 'transfer' ? 'Transferência' : account.paymentMethod}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Users className="h-12 w-12 mb-4" />
               <p className="text-lg font-medium">Nenhuma conta encontrada</p>
-              <p className="text-sm">Clique em "Nova Conta" para adicionar</p>
+              <p className="text-sm">Tente ajustar os filtros ou clique em "Nova Conta" para adicionar</p>
             </div>
           )}
         </CardContent>
       </Card>
-
+      
       {/* Payment Confirmation Dialog */}
       <Dialog open={paymentDialogOpen} onOpenChange={handlePaymentDialogOpenChange}>
         <DialogContent>
@@ -1222,79 +1399,80 @@ export default function AccountsReceivable() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Data do Recebimento</label>
-              <Input
-                type="date"
-                value={receivedDate}
-                onChange={(e) => setReceivedDate(e.target.value)}
-                className="mt-1"
-              />
+              <div>
+                <label className="text-sm font-medium">Data do Recebimento</label>
+                <Input
+                  type="date"
+                  value={receivedDate}
+                  onChange={(e) => setReceivedDate(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Valor Original</label>
+                <p className="text-lg font-semibold">
+                  {accountToReceive && formatCurrency(accountToReceive.amount)}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Desconto (opcional)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0,00"
+                  onChange={(e) => {
+                    if (accountToReceive) {
+                      setAccountToReceive({ ...accountToReceive, discount: e.target.value });
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Valor Líquido</label>
+                <p className="text-lg font-semibold">
+                  {accountToReceive && formatCurrency((parseFloat(accountToReceive.amount?.toString() || "0") - parseFloat(accountToReceive.discount?.toString() || "0")).toFixed(2))}
+                </p>
+              </div>
+              {accountToReceive && accountToReceive.paymentDate && (
+                <div>
+                  <label className="text-sm font-medium">Forma de Pagamento</label>
+                  <Badge variant="outline" className="font-normal capitalize">
+                    {accountToReceive.paymentMethod === 'money' ? 'Dinheiro' :
+                     accountToReceive.paymentMethod === 'pix' ? 'PIX' :
+                     accountToReceive.paymentMethod === 'credit_card' ? 'Cartão de Crédito' :
+                     accountToReceive.paymentMethod === 'debit_card' ? 'Cartão de Débito' :
+                     accountToReceive.paymentMethod === 'boleto' ? 'Boleto' :
+                     accountToReceive.paymentMethod === 'transfer' ? 'Transferência' : accountToReceive.paymentMethod}
+                  </Badge>
+                </div>
+              )}
             </div>
-            <div>
-              <label className="text-sm font-medium">Valor Original</label>
-              <p className="text-lg font-semibold">
-                {accountToReceive && formatCurrency(accountToReceive.amount)}
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Desconto (opcional)</label>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="0,00"
-                onChange={(e) => {
+            <DialogFooter className="gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPaymentDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={markAsReceivedMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => {
                   if (accountToReceive) {
-                    setAccountToReceive({ ...accountToReceive, discount: e.target.value });
+                    markAsReceivedMutation.mutate({
+                      id: accountToReceive.id,
+                      discount: accountToReceive.discount || "",
+                      receivedDate: receivedDate,
+                      paymentMethod: paymentMethod
+                    });
                   }
                 }}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Valor Final</label>
-              <p className="text-lg font-semibold text-green-600">
-                {accountToReceive && formatCurrency(
-                  parseFloat(accountToReceive.amount) - (parseFloat(accountToReceive.discount || "0") || 0)
-                )}
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Forma de Pagamento</label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Selecione a forma de pagamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="money">Dinheiro</SelectItem>
-                  <SelectItem value="pix">PIX</SelectItem>
-                  <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
-                  <SelectItem value="debit_card">Cartão de Débito</SelectItem>
-                  <SelectItem value="boleto">Boleto</SelectItem>
-                  <SelectItem value="transfer">Transferência</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => handlePaymentDialogOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={() => {
-                if (accountToReceive) {
-                  markAsReceivedMutation.mutate({
-                    id: accountToReceive.id,
-                    discount: accountToReceive.discount ?? undefined,
-                    receivedDate: receivedDate,
-                    paymentMethod: paymentMethod,
-                  });
-                }
-              }}
-              disabled={markAsReceivedMutation.isPending}
-            >
-              {markAsReceivedMutation.isPending ? "Processando..." : "Confirmar Recebimento"}
-            </Button>
-          </DialogFooter>
+              >
+                {markAsReceivedMutation.isPending ? "Salvando..." : "Confirmar Recebimento"}
+              </Button>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -1424,3 +1602,5 @@ export default function AccountsReceivable() {
     </div>
   );
 }
+
+export default function AccountsReceivable();

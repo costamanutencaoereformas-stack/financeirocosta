@@ -12,19 +12,17 @@ import {
   Tags,
   TrendingUp,
   TrendingDown,
+  Grid3X3,
+  List,
+  BarChart3,
+  PieChart,
+  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -55,7 +53,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Category } from "@shared/schema";
@@ -64,15 +61,116 @@ const categoryFormSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   type: z.enum(["income", "expense"], { required_error: "Tipo é obrigatório" }),
   dreCategory: z.string().optional(),
+  color: z.string().optional(),
 });
 
 type CategoryFormData = z.infer<typeof categoryFormSchema>;
 
+const categoryColors = [
+  { value: "green", label: "Verde", class: "bg-green-500" },
+  { value: "blue", label: "Azul", class: "bg-blue-500" },
+  { value: "red", label: "Vermelho", class: "bg-red-500" },
+  { value: "yellow", label: "Amarelo", class: "bg-yellow-500" },
+  { value: "purple", label: "Roxo", class: "bg-purple-500" },
+  { value: "pink", label: "Rosa", class: "bg-pink-500" },
+  { value: "orange", label: "Laranja", class: "bg-orange-500" },
+  { value: "cyan", label: "Ciano", class: "bg-cyan-500" },
+  { value: "indigo", label: "Índigo", class: "bg-indigo-500" },
+  { value: "gray", label: "Cinza", class: "bg-gray-500" },
+];
+
 const dreCategories = [
-  { value: "revenue", label: "Receita Bruta" },
-  { value: "deductions", label: "Deduções" },
-  { value: "costs", label: "Custos" },
-  { value: "operational_expenses", label: "Despesas Operacionais" },
+  // Receitas
+  { value: "revenue", label: "Receita Bruta", type: "income" },
+  { value: "service_revenue", label: "Receita de Serviços", type: "income" },
+  { value: "product_revenue", label: "Receita de Produtos", type: "income" },
+  { value: "commission_revenue", label: "Receita de Comissões", type: "income" },
+  { value: "rental_revenue", label: "Receita de Aluguel", type: "income" },
+  { value: "financial_revenue", label: "Receitas Financeiras", type: "income" },
+  { value: "other_revenue", label: "Outras Receitas", type: "income" },
+  
+  // Deduções
+  { value: "deductions", label: "Deduções", type: "income" },
+  { value: "tax_deductions", label: "Deduções de Impostos", type: "income" },
+  { value: "returns", label: "Devoluções e Abatimentos", type: "income" },
+  { value: "discounts_given", label: "Descontos Concedidos", type: "income" },
+  
+  // Custos
+  { value: "costs", label: "Custos", type: "expense" },
+  { value: "raw_materials", label: "Matéria-Prima", type: "expense" },
+  { value: "direct_labor", label: "Mão de Obra Direta", type: "expense" },
+  { value: "packaging", label: "Embalagens", type: "expense" },
+  { value: "freight_in", label: "Frete de Compras", type: "expense" },
+  { value: "production_costs", label: "Custos de Produção", type: "expense" },
+  
+  // Despesas Operacionais
+  { value: "operational_expenses", label: "Despesas Operacionais", type: "expense" },
+  
+  // Despesas Administrativas
+  { value: "administrative_expenses", label: "Despesas Administrativas", type: "expense" },
+  { value: "salaries", label: "Salários e Ordenados", type: "expense" },
+  { value: "benefits", label: "Benefícios e Encargos", type: "expense" },
+  { value: "office_supplies", label: "Material de Escritório", type: "expense" },
+  { value: "professional_fees", label: "Honorários Profissionais", type: "expense" },
+  { value: "software_subscriptions", label: "Software e Assinaturas", type: "expense" },
+  { value: "bank_fees", label: "Taxas Bancárias", type: "expense" },
+  { value: "accounting_services", label: "Serviços Contábeis", type: "expense" },
+  { value: "legal_services", label: "Serviços Jurídicos", type: "expense" },
+  
+  // Despesas Comerciais
+  { value: "sales_expenses", label: "Despesas Comerciais", type: "expense" },
+  { value: "marketing", label: "Marketing e Publicidade", type: "expense" },
+  { value: "commissions", label: "Comissões de Vendas", type: "expense" },
+  { value: "sales_commissions", label: "Comissões sobre Vendas", type: "expense" },
+  { value: "travel_expenses", label: "Despesas de Viagem", type: "expense" },
+  { value: "entertainment", label: "Representação e Entretenimento", type: "expense" },
+  { value: "sales_material", label: "Material de Vendas", type: "expense" },
+  
+  // Despesas com Imóveis
+  { value: "property_expenses", label: "Despesas com Imóveis", type: "expense" },
+  { value: "rent", label: "Aluguel", type: "expense" },
+  { value: "property_tax", label: "IPTU e Taxas Prediais", type: "expense" },
+  { value: "condominium", label: "Condomínio", type: "expense" },
+  { value: "maintenance", label: "Manutenção e Conservação", type: "expense" },
+  
+  // Despesas com Veículos
+  { value: "vehicle_expenses", label: "Despesas com Veículos", type: "expense" },
+  { value: "fuel", label: "Combustíveis", type: "expense" },
+  { value: "vehicle_maintenance", label: "Manutenção de Veículos", type: "expense" },
+  { value: "insurance", label: "Seguros", type: "expense" },
+  { value: "vehicle_insurance", label: "Seguro Veicular", type: "expense" },
+  { value: "licensing", label: "Licenciamento", type: "expense" },
+  
+  // Despesas com Tecnologia
+  { value: "technology_expenses", label: "Despesas com Tecnologia", type: "expense" },
+  { value: "hardware", label: "Hardware e Equipamentos", type: "expense" },
+  { value: "internet", label: "Internet e Telecomunicações", type: "expense" },
+  { value: "hosting", label: "Hospedagem e Domínios", type: "expense" },
+  { value: "it_services", label: "Serviços de TI", type: "expense" },
+  
+  // Despesas Financeiras
+  { value: "financial_expenses", label: "Despesas Financeiras", type: "expense" },
+  { value: "interest_expenses", label: "Despesas de Juros", type: "expense" },
+  { value: "late_fees", label: "Multa e Juros de Atraso", type: "expense" },
+  { value: "exchange_loss", label: "Variação Cambial", type: "expense" },
+  { value: "bad_debt", label: "Perdas com Créditos", type: "expense" },
+  
+  // Impostos e Tributos
+  { value: "taxes", label: "Impostos e Tributos", type: "expense" },
+  { value: "federal_taxes", label: "Impostos Federais", type: "expense" },
+  { value: "state_taxes", label: "Impostos Estaduais", type: "expense" },
+  { value: "municipal_taxes", label: "Impostos Municipais", type: "expense" },
+  { value: "tax_fines", label: "Multas Fiscais", type: "expense" },
+  
+  // Despesas Diversas
+  { value: "miscellaneous", label: "Despesas Diversas", type: "expense" },
+  { value: "utilities", label: "Água, Luz e Telefone", type: "expense" },
+  { value: "cleaning", label: "Limpeza e Higiene", type: "expense" },
+  { value: "security", label: "Segurança e Vigilância", type: "expense" },
+  { value: "training", label: "Treinamento e Desenvolvimento", type: "expense" },
+  { value: "events", label: "Eventos e Congressos", type: "expense" },
+  { value: "donations", label: "Doações e Patrocínios", type: "expense" },
+  { value: "other_expenses", label: "Outras Despesas", type: "expense" },
 ];
 
 export default function Categories() {
@@ -80,6 +178,7 @@ export default function Categories() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const { toast } = useToast();
 
   const { data: categories, isLoading } = useQuery<Category[]>({
@@ -92,6 +191,7 @@ export default function Categories() {
       name: "",
       type: "expense",
       dreCategory: "",
+      color: "",
     },
   });
 
@@ -176,8 +276,9 @@ export default function Categories() {
     setEditingCategory(category);
     form.reset({
       name: category.name,
-      type: category.type as "income" | "expense",
+      type: category.type,
       dreCategory: category.dreCategory || "",
+      color: category.color || "",
     });
     setIsOpen(true);
   };
@@ -197,6 +298,12 @@ export default function Categories() {
     const matchesType = typeFilter === "all" || category.type === typeFilter;
     return matchesSearch && matchesType;
   });
+
+  // Estatísticas
+  const totalCategories = categories?.length || 0;
+  const incomeCategories = categories?.filter(c => c.type === "income").length || 0;
+  const expenseCategories = categories?.filter(c => c.type === "expense").length || 0;
+  const filteredCount = filteredCategories?.length || 0;
 
   const getDreCategoryLabel = (value: string | null) => {
     if (!value) return "-";
@@ -298,16 +405,49 @@ export default function Categories() {
                         </FormControl>
                         <SelectContent>
                           {dreCategories
-                            .filter((c) =>
-                              watchType === "income"
-                                ? c.value === "revenue" || c.value === "deductions"
-                                : c.value === "costs" || c.value === "operational_expenses"
-                            )
+                            .filter((c) => !c.type || c.type === watchType)
                             .map((category) => (
                               <SelectItem key={category.value} value={category.value}>
                                 {category.label}
                               </SelectItem>
                             ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="color"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cor da Categoria</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-color">
+                            <SelectValue placeholder="Selecione uma cor">
+                              {field.value && (
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-4 h-4 rounded-full ${categoryColors.find(c => c.value === field.value)?.class || 'bg-gray-500'}`}></div>
+                                  {categoryColors.find(c => c.value === field.value)?.label}
+                                </div>
+                              )}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categoryColors.map((color) => (
+                            <SelectItem key={color.value} value={color.value}>
+                              <div className="flex items-center gap-2">
+                                <div className={`w-4 h-4 rounded-full ${color.class}`}></div>
+                                {color.label}
+                              </div>
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -341,15 +481,64 @@ export default function Categories() {
         </Dialog>
       </div>
 
+      {/* Cards de Estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total</p>
+                <p className="text-2xl font-bold">{totalCategories}</p>
+              </div>
+              <Tags className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Receitas</p>
+                <p className="text-2xl font-bold text-green-600">{incomeCategories}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Despesas</p>
+                <p className="text-2xl font-bold text-red-600">{expenseCategories}</p>
+              </div>
+              <TrendingDown className="h-8 w-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Filtradas</p>
+                <p className="text-2xl font-bold text-blue-600">{filteredCount}</p>
+              </div>
+              <Filter className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filtros e Controles */}
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle className="text-lg">Lista de Categorias</CardTitle>
+            <CardTitle className="text-lg">Filtros e Visualização</CardTitle>
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar..."
+                  placeholder="Buscar categorias..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9 w-[200px]"
@@ -366,93 +555,181 @@ export default function Categories() {
                   <SelectItem value="expense">Despesas</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="flex gap-1 p-1 bg-muted rounded-lg">
+                <Button
+                  variant={viewMode === "grid" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                  className="h-8 w-8 p-0"
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className="h-8 w-8 p-0"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+      </Card>
+
+      {/* Lista de Categorias */}
+      <Card>
+        <CardContent className="p-6">
           {isLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
+            <div className="space-y-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-[200px]" />
+                    <Skeleton className="h-3 w-[100px]" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : filteredCategories && filteredCategories.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Categoria DRE</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+            <>
+              {viewMode === "grid" ? (
+                // Visualização em Grid
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {filteredCategories.map((category) => (
-                    <TableRow key={category.id} data-testid={`row-category-${category.id}`}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <Tags className="h-4 w-4 text-muted-foreground" />
-                          {category.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            category.type === "income"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                          }
-                        >
-                          <span className="flex items-center gap-1">
-                            {category.type === "income" ? (
-                              <TrendingUp className="h-3 w-3" />
-                            ) : (
-                              <TrendingDown className="h-3 w-3" />
+                    <Card key={category.id} className="hover:shadow-md transition-shadow cursor-pointer group">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            {category.color && (
+                              <div className={`w-4 h-4 rounded-full ${categoryColors.find(c => c.value === category.color)?.class || 'bg-gray-500'}`}></div>
                             )}
-                            {category.type === "income" ? "Receita" : "Despesa"}
-                          </span>
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {getDreCategoryLabel(category.dreCategory)}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" data-testid={`button-actions-${category.id}`}>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => handleEdit(category)}
-                              data-testid={`button-edit-${category.id}`}
+                            <Badge
+                              className={
+                                category.type === "income"
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                  : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                              }
                             >
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => deleteMutation.mutate(category.id)}
-                              className="text-destructive"
-                              data-testid={`button-delete-${category.id}`}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                              <span className="flex items-center gap-1 text-xs">
+                                {category.type === "income" ? (
+                                  <TrendingUp className="h-3 w-3" />
+                                ) : (
+                                  <TrendingDown className="h-3 w-3" />
+                                )}
+                                {category.type === "income" ? "Receita" : "Despesa"}
+                              </span>
+                            </Badge>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handleEdit(category)}
+                                data-testid={`button-edit-${category.id}`}
+                              >
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => deleteMutation.mutate(category.id)}
+                                className="text-destructive"
+                                data-testid={`button-delete-${category.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
+                          {category.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {getDreCategoryLabel(category.dreCategory)}
+                        </p>
+                      </CardContent>
+                    </Card>
                   ))}
-                </TableBody>
-              </Table>
-            </div>
+                </div>
+              ) : (
+                // Visualização em Lista (Melhorada)
+                <div className="space-y-3">
+                  {filteredCategories.map((category) => (
+                    <Card key={category.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 flex-1">
+                            {category.color && (
+                              <div className={`w-4 h-4 rounded-full ${categoryColors.find(c => c.value === category.color)?.class || 'bg-gray-500'}`}></div>
+                            )}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold">{category.name}</h3>
+                                <Badge
+                                  className={
+                                    category.type === "income"
+                                      ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                      : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                  }
+                                >
+                                  <span className="flex items-center gap-1 text-xs">
+                                    {category.type === "income" ? (
+                                      <TrendingUp className="h-3 w-3" />
+                                    ) : (
+                                      <TrendingDown className="h-3 w-3" />
+                                    )}
+                                    {category.type === "income" ? "Receita" : "Despesa"}
+                                  </span>
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {getDreCategoryLabel(category.dreCategory)}
+                              </p>
+                            </div>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" data-testid={`button-actions-${category.id}`}>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handleEdit(category)}
+                                data-testid={`button-edit-${category.id}`}
+                              >
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => deleteMutation.mutate(category.id)}
+                                className="text-destructive"
+                                data-testid={`button-delete-${category.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Tags className="h-12 w-12 mb-4" />
               <p className="text-lg font-medium">Nenhuma categoria encontrada</p>
-              <p className="text-sm">Clique em "Nova Categoria" para adicionar</p>
+              <p className="text-sm">Tente ajustar os filtros ou clique em "Nova Categoria" para adicionar</p>
             </div>
           )}
         </CardContent>

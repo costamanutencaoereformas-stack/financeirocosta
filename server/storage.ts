@@ -137,17 +137,80 @@ export class DatabaseStorage implements IStorage {
     }
 
     const defaultCategories = [
+      // Receitas (Contas a Receber)
       { name: "Vendas de Produtos", type: "income", dreCategory: "revenue" },
       { name: "Prestação de Serviços", type: "income", dreCategory: "revenue" },
-      { name: "Outras Receitas", type: "income", dreCategory: "revenue" },
+      { name: "Recebimento de Clientes", type: "income", dreCategory: "revenue" },
+      { name: "Juros Recebidos", type: "income", dreCategory: "financial_revenue" },
+      { name: "Aluguéis Recebidos", type: "income", dreCategory: "rental_revenue" },
+      { name: "Comissões Recebidas", type: "income", dreCategory: "commission_revenue" },
+      { name: "Vendas de Ativos", type: "income", dreCategory: "other_revenue" },
+      { name: "Reembolsos", type: "income", dreCategory: "other_revenue" },
+      { name: "Outras Receitas", type: "income", dreCategory: "other_revenue" },
+      
+      // Deduções de Receitas
       { name: "Impostos sobre Vendas", type: "income", dreCategory: "deductions" },
-      { name: "Devoluções", type: "income", dreCategory: "deductions" },
+      { name: "Devoluções de Vendas", type: "income", dreCategory: "deductions" },
+      { name: "Abatimentos e Descontos", type: "income", dreCategory: "deductions" },
+      
+      // Despesas (Contas a Pagar) - Custos
       { name: "Custo de Mercadorias", type: "expense", dreCategory: "costs" },
-      { name: "Aluguel", type: "expense", dreCategory: "operational_expenses" },
-      { name: "Salários", type: "expense", dreCategory: "operational_expenses" },
-      { name: "Marketing", type: "expense", dreCategory: "operational_expenses" },
-      { name: "Utilidades", type: "expense", dreCategory: "operational_expenses" },
-      { name: "Material de Escritório", type: "expense", dreCategory: "operational_expenses" },
+      { name: "Matéria-Prima", type: "expense", dreCategory: "costs" },
+      { name: "Embalagens", type: "expense", dreCategory: "costs" },
+      { name: "Frete de Compras", type: "expense", dreCategory: "costs" },
+      { name: "Mão de Obra Direta", type: "expense", dreCategory: "costs" },
+      
+      // Despesas Operacionais
+      { name: "Aluguel de Imóveis", type: "expense", dreCategory: "operational_expenses" },
+      { name: "Salários e Ordenados", type: "expense", dreCategory: "administrative_expenses" },
+      { name: "Benefícios e Encargos", type: "expense", dreCategory: "administrative_expenses" },
+      { name: "Marketing e Publicidade", type: "expense", dreCategory: "sales_expenses" },
+      { name: "Comissões de Vendas", type: "expense", dreCategory: "sales_expenses" },
+      { name: "Material de Escritório", type: "expense", dreCategory: "administrative_expenses" },
+      { name: "Honorários Profissionais", type: "expense", dreCategory: "administrative_expenses" },
+      { name: "Serviços Contábeis", type: "expense", dreCategory: "administrative_expenses" },
+      { name: "Serviços Jurídicos", type: "expense", dreCategory: "administrative_expenses" },
+      
+      // Despesas com Tecnologia
+      { name: "Software e Assinaturas", type: "expense", dreCategory: "administrative_expenses" },
+      { name: "Hardware e Equipamentos", type: "expense", dreCategory: "technology_expenses" },
+      { name: "Internet e Telecomunicações", type: "expense", dreCategory: "technology_expenses" },
+      { name: "Hospedagem e Domínios", type: "expense", dreCategory: "technology_expenses" },
+      
+      // Despesas com Veículos
+      { name: "Combustíveis", type: "expense", dreCategory: "vehicle_expenses" },
+      { name: "Manutenção de Veículos", type: "expense", dreCategory: "vehicle_expenses" },
+      { name: "Seguro Veicular", type: "expense", dreCategory: "vehicle_expenses" },
+      { name: "Licenciamento", type: "expense", dreCategory: "vehicle_expenses" },
+      
+      // Utilidades e Serviços
+      { name: "Água e Esgoto", type: "expense", dreCategory: "miscellaneous" },
+      { name: "Energia Elétrica", type: "expense", dreCategory: "miscellaneous" },
+      { name: "Telefone", type: "expense", dreCategory: "miscellaneous" },
+      { name: "Gás", type: "expense", dreCategory: "miscellaneous" },
+      
+      // Despesas Financeiras
+      { name: "Juros Pagos", type: "expense", dreCategory: "financial_expenses" },
+      { name: "Multas e Juros de Atraso", type: "expense", dreCategory: "financial_expenses" },
+      { name: "Taxas Bancárias", type: "expense", dreCategory: "administrative_expenses" },
+      { name: "Despesas com Cartões", type: "expense", dreCategory: "financial_expenses" },
+      
+      // Impostos e Tributos
+      { name: "Impostos Federais", type: "expense", dreCategory: "taxes" },
+      { name: "Impostos Estaduais", type: "expense", dreCategory: "taxes" },
+      { name: "Impostos Municipais", type: "expense", dreCategory: "taxes" },
+      { name: "Multas Fiscais", type: "expense", dreCategory: "taxes" },
+      
+      // Despesas Diversas
+      { name: "Alimentação", type: "expense", dreCategory: "miscellaneous" },
+      { name: "Transporte", type: "expense", dreCategory: "miscellaneous" },
+      { name: "Hospedagem e Viagens", type: "expense", dreCategory: "sales_expenses" },
+      { name: "Treinamento e Desenvolvimento", type: "expense", dreCategory: "miscellaneous" },
+      { name: "Eventos e Congressos", type: "expense", dreCategory: "miscellaneous" },
+      { name: "Limpeza e Higiene", type: "expense", dreCategory: "miscellaneous" },
+      { name: "Segurança e Vigilância", type: "expense", dreCategory: "miscellaneous" },
+      { name: "Doações e Patrocínios", type: "expense", dreCategory: "miscellaneous" },
+      { name: "Outras Despesas", type: "expense", dreCategory: "miscellaneous" },
     ];
 
     for (const cat of defaultCategories) {
@@ -1861,6 +1924,38 @@ export class DatabaseStorage implements IStorage {
   async deleteNote(id: string): Promise<boolean> {
     const [deleted] = await db.delete(notes).where(eq(notes.id, id)).returning();
     return !!deleted;
+  }
+
+  // Inicialização do banco de dados
+  async initializeDatabase(): Promise<void> {
+    try {
+      // Verificar e adicionar campo color na tabela categories se não existir
+      await db.execute(sql`
+        DO $$ 
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name='categories' 
+                AND column_name='color'
+                AND table_schema = current_schema()
+            ) THEN
+                ALTER TABLE categories ADD COLUMN color TEXT;
+                
+                -- Atualizar categorias existentes com cores padrão
+                UPDATE categories 
+                SET color = CASE 
+                    WHEN type = 'income' THEN 'green'
+                    WHEN type = 'expense' THEN 'red'
+                    ELSE 'gray'
+                END 
+                WHERE color IS NULL;
+            END IF;
+        END $$;
+      `);
+      console.log('✅ Campo "color" verificado/criado na tabela categories');
+    } catch (error) {
+      console.error('❌ Erro ao inicializar banco de dados:', error);
+    }
   }
 }
 
