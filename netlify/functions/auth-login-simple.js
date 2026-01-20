@@ -4,9 +4,9 @@ const mockUsers = [
   { id: 2, username: 'user', password: 'user123', name: 'Usuário Teste' }
 ];
 
-// Main handler function for Netlify
+// Simple login function
 export const handler = async (event, context) => {
-  console.log('Auth login request received:', JSON.stringify(event));
+  console.log('Login request received:', JSON.stringify(event));
   
   // Only handle POST requests
   if (event.httpMethod !== 'POST') {
@@ -17,9 +17,8 @@ export const handler = async (event, context) => {
         message: 'Only POST method is allowed'
       }),
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
       }
     };
   }
@@ -29,7 +28,17 @@ export const handler = async (event, context) => {
   try {
     body = JSON.parse(event.body);
   } catch (e) {
-    body = {};
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ 
+        error: 'Invalid JSON',
+        message: 'Request body must be valid JSON'
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    };
   }
 
   const { username, password } = body;
@@ -42,9 +51,8 @@ export const handler = async (event, context) => {
         message: 'Usuário e senha são obrigatórios'
       }),
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
       }
     };
   }
@@ -70,9 +78,8 @@ export const handler = async (event, context) => {
         token
       }),
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
       }
     };
   } else {
@@ -85,9 +92,8 @@ export const handler = async (event, context) => {
         message: 'Usuário ou senha incorretos'
       }),
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
       }
     };
   }
