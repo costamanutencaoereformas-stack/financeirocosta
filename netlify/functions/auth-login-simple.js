@@ -11,15 +11,39 @@ export const handler = async (event, context) => {
   console.log('=== LOGIN DEBUG ===');
   console.log('Event:', JSON.stringify(event, null, 2));
   console.log('Body received:', event.body);
+  console.log('HTTP Method:', event.httpMethod);
   
-  // Only handle POST requests
-  if (event.httpMethod !== 'POST') {
+  // Handle both GET and POST for testing
+  if (event.httpMethod !== 'POST' && event.httpMethod !== 'GET') {
     console.log('Method not allowed:', event.httpMethod);
     return {
       statusCode: 405,
       body: JSON.stringify({ 
         error: 'Method not allowed',
         message: 'Only POST method is allowed'
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    };
+  }
+
+  // For GET requests, return info about the endpoint
+  if (event.httpMethod === 'GET') {
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'Login endpoint - Use POST method',
+        method: 'POST',
+        expectedBody: {
+          username: 'string',
+          password: 'string'
+        },
+        testUsers: [
+          { username: 'admin@financeirototal.com', password: 'admin123' },
+          { username: 'user@financeirototal.com', password: 'user123' }
+        ]
       }),
       headers: {
         'Content-Type': 'application/json',
