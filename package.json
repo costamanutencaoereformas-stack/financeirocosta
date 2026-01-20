@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx server/index.ts",
     "build": "tsx script/build.ts",
-    "build:netlify": "tsx script/build-netlify.ts",
+    "build:netlify": "npx vite build",
     "build:functions": "tsx script/build-netlify-functions.ts",
     "start": "cross-env NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
