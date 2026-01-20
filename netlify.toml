@@ -1,6 +1,6 @@
 [build]
   publish = "client/dist"
-  command = "cd client && npm install --include=optional && npx vite build"
+  command = "cd client && npm install --include=optional && npx vite build && cd .. && npm run build:functions"
 
 [build.environment]
   NODE_VERSION = "20"
