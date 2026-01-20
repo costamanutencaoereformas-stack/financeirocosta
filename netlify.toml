@@ -8,22 +8,22 @@
 
 [[redirects]]
   from = "/api/health"
-  to = "/.netlify/functions/health"
+  to = "/.netlify/functions/api/health"
   status = 200
 
 [[redirects]]
   from = "/api/auth/login"
-  to = "/.netlify/functions/auth-login"
+  to = "/.netlify/functions/api/auth/login"
   status = 200
 
 [[redirects]]
   from = "/api/auth/me"
-  to = "/.netlify/functions/auth-me"
+  to = "/.netlify/functions/api/auth/me"
   status = 200
 
 [[redirects]]
   from = "/api/auth/logout"
-  to = "/.netlify/functions/auth-logout"
+  to = "/.netlify/functions/api/auth/logout"
   status = 200
 
 [[redirects]]
