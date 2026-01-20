@@ -8,10 +8,13 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Simple login function
 export const handler = async (event, context) => {
-  console.log('Login request received:', JSON.stringify(event));
+  console.log('=== LOGIN DEBUG ===');
+  console.log('Event:', JSON.stringify(event, null, 2));
+  console.log('Body received:', event.body);
   
   // Only handle POST requests
   if (event.httpMethod !== 'POST') {
+    console.log('Method not allowed:', event.httpMethod);
     return {
       statusCode: 405,
       body: JSON.stringify({ 
@@ -29,7 +32,9 @@ export const handler = async (event, context) => {
   let body;
   try {
     body = JSON.parse(event.body);
+    console.log('Parsed body:', JSON.stringify(body, null, 2));
   } catch (e) {
+    console.log('JSON parse error:', e.message);
     return {
       statusCode: 400,
       body: JSON.stringify({ 
@@ -44,8 +49,10 @@ export const handler = async (event, context) => {
   }
 
   const { username, password } = body;
+  console.log('Extracted credentials:', { username: username || 'undefined', password: password ? 'provided' : 'undefined' });
   
   if (!username || !password) {
+    console.log('Missing credentials');
     return {
       statusCode: 400,
       body: JSON.stringify({ 
@@ -61,6 +68,7 @@ export const handler = async (event, context) => {
 
   try {
     // Try Supabase auth first
+    console.log('Trying Supabase auth...');
     const { data, error } = await supabase.auth.signInWithPassword({
       email: username,
       password: password
@@ -75,7 +83,9 @@ export const handler = async (event, context) => {
         { id: 2, username: 'user@financeirototal.com', password: 'user123', name: 'Usuário Teste' }
       ];
       
+      console.log('Checking mock users...');
       const mockUser = mockUsers.find(u => u.username === username && u.password === password);
+      console.log('Mock user found:', mockUser ? 'YES' : 'NO');
       
       if (mockUser) {
         const token = Buffer.from(`${mockUser.id}:${Date.now()}`).toString('base64');
@@ -101,6 +111,7 @@ export const handler = async (event, context) => {
         };
       }
       
+      console.log('Both Supabase and mock auth failed');
       return {
         statusCode: 401,
         body: JSON.stringify({ 
