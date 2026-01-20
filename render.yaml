@@ -1,0 +1,33 @@
+services:
+  # Web service (frontend + backend)
+  - type: web
+    name: gestao-financeira
+    env: node
+    plan: free
+    buildCommand: "npm run build"
+    startCommand: "npm start"
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+
+databases:
+  # PostgreSQL database (optional - can use Supabase instead)
+  - name: gestao-financeira-db
+    databaseName: gestao_financeira
+    user: gestao_user
+    plan: free

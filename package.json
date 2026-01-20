@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx server/index.ts",
     "build": "tsx script/build.ts",
+    "build:render": "npm run build",
     "build:netlify": "npm ci --include=optional && npx vite build",
     "build:functions": "tsx script/build-netlify-functions.ts",
     "start": "cross-env NODE_ENV=production node dist/index.cjs",
@@ -14,6 +15,7 @@
     "deploy:vercel": "vercel --prod",
     "deploy:preview": "vercel",
     "deploy:netlify": "netlify deploy --prod",
+    "deploy:render": "git push origin main",
     "install:vercel": "npm i -g vercel"
   },
   "dependencies": {
