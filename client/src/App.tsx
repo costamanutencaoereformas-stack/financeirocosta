@@ -13,6 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut, User, Loader2, StickyNote } from "lucide-react";
 import { Notifications } from "@/components/notifications";
+import { EmpresaSelector } from "@/components/EmpresaSelector";
 import Dashboard from "@/pages/dashboard";
 import AccountsPayable from "@/pages/accounts-payable";
 import AccountsReceivable from "@/pages/accounts-receivable";
@@ -29,6 +30,7 @@ import CostCenters from "@/pages/cost-centers";
 import UsersPage from "@/pages/users";
 import Login from "@/pages/login";
 import NotesPage from "@/pages/notes";
+import EmpresasPage from "@/pages/EmpresasPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -49,6 +51,7 @@ function Router() {
       <Route path="/centros-custo" component={CostCenters} />
       <Route path="/usuarios" component={UsersPage} />
       <Route path="/anotacoes" component={NotesPage} />
+      <Route path="/empresas" component={EmpresasPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -117,6 +120,7 @@ function AuthenticatedApp() {
           <header className="flex items-center justify-between gap-2 p-3 border-b bg-background sticky top-0 z-50">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <div className="flex items-center gap-2">
+              <EmpresaSelector />
               <Link href="/anotacoes">
                 <Button variant="ghost" size="icon" title="Anotações">
                   <StickyNote className="h-[1.2rem] w-[1.2rem]" />

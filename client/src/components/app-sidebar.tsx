@@ -106,6 +106,13 @@ const mainNavItems = [
 
 const settingsNavItems = [
   {
+    title: "Empresas",
+    url: "/empresas",
+    icon: Building2,
+    description: "Gerencie empresas",
+    badge: null,
+  },
+  {
     title: "Cadastros",
     url: "/cadastros",
     icon: Settings,
