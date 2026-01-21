@@ -11,6 +11,9 @@ export async function registerRoutes(
 ): Promise<Server> {
   setupAuth(app);
 
+  // Register Supabase Auth routes
+  app.use("/api/supabase-auth", supabaseAuthRoutes);
+
   // Health check endpoint for Render
   app.get("/health", (req, res) => {
     res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });

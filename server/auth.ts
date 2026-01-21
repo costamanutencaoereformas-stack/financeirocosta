@@ -45,6 +45,7 @@ export function setupAuth(app: Express): void {
   const PgSession = connectPgSimple(session);
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
   });
 
   app.use(
@@ -122,7 +123,13 @@ export function setupAuth(app: Express): void {
 }
 
 export const requireAuth: RequestHandler = (req, res, next) => {
+  console.log(`[Auth Debug] Checking requirement for ${req.path}`);
+  console.log(`[Auth Debug] IsAuthenticated: ${req.isAuthenticated()}`);
+  console.log(`[Auth Debug] Session ID: ${req.sessionID}`);
+  console.log(`[Auth Debug] User:`, req.user ? { id: req.user.id, username: req.user.username } : "null");
+
   if (!req.isAuthenticated()) {
+    console.log(`[Auth Debug] Rejecting with 401 for ${req.path}`);
     return res.status(401).json({ error: "Não autenticado" });
   }
   next();
@@ -130,10 +137,13 @@ export const requireAuth: RequestHandler = (req, res, next) => {
 
 export const requireRole = (...roles: UserRole[]): RequestHandler => {
   return (req, res, next) => {
+    console.log(`[Auth Debug] Checking role for ${req.path}, allowed: ${roles}`);
     if (!req.isAuthenticated()) {
+      console.log(`[Auth Debug] Rejecting with 401 (not auth) for ${req.path}`);
       return res.status(401).json({ error: "Não autenticado" });
     }
     if (!roles.includes(req.user!.role as UserRole)) {
+      console.log(`[Auth Debug] Rejecting with 403 (wrong role ${req.user!.role}) for ${req.path}`);
       return res.status(403).json({ error: "Sem permissão para esta ação" });
     }
     next();

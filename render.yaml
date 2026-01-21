@@ -4,7 +4,7 @@ services:
     name: gestao-financeira
     env: node
     plan: free
-    buildCommand: "npm install --include=optional && npm run build"
+    buildCommand: "npm install && npm run build:render"
     startCommand: "npm start"
     healthCheckPath: /api/health
     envVars:
@@ -12,7 +12,8 @@ services:
         value: production
       - key: PORT
         value: 10000
-      - key: DATABASE_URL
+      # As variáveis abaixo devem ser configuradas no Dashboard do Render
+      - key: DATABASE_URL # postgresql://postgres.[REF]:[PASS]@...
         sync: false
       - key: SUPABASE_URL
         sync: false
