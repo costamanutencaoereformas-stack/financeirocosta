@@ -532,712 +532,710 @@ export default function AccountsPayable() {
 
       {/* Botão Nova Conta - Flutuante */}
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-new-payable">
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Conta
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-xl">
-                {editingAccount ? "Editar Conta a Pagar" : "Nova Conta a Pagar"}
-              </DialogTitle>
-              <DialogDescription>
-                Preencha os dados da conta a pagar. Campos com * são obrigatórios. Use a seção "Informações Avançadas" para maior controle e categorização.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                {/* Main Information Section */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-900 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Informações Principais
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-blue-900 font-medium">Descrição *</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Ex: Aluguel do escritório"
-                              {...field}
-                              data-testid="input-description"
-                              className="bg-white border-blue-300"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="amount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-blue-900 font-medium">Valor *</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0,00"
-                              {...field}
-                              data-testid="input-amount"
-                              className="bg-white border-blue-300"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                    <FormField
-                      control={form.control}
-                      name="issueDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-blue-900 font-medium">Data de Emissão</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} className="bg-white border-blue-300" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="dueDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-blue-900 font-medium">Data de Vencimento *</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} data-testid="input-due-date" className="bg-white border-blue-300" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="invoiceNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-blue-900 font-medium">Nº da Fatura</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="0001/2024"
-                              {...field}
-                              className="bg-white border-blue-300"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <FormField
-                      control={form.control}
-                      name="lateFees"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-blue-900 font-medium">Juros / Multa</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0,00"
-                              {...field}
-                              data-testid="input-late-fees"
-                              className="bg-white border-blue-300"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <FormField
-                      control={form.control}
-                      name="discount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-blue-900 font-medium">Desconto Previsto</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0,00"
-                              {...field}
-                              className="bg-white border-blue-300"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+        <DialogTrigger asChild>
+          <Button data-testid="button-new-payable">
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Conta
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">
+              {editingAccount ? "Editar Conta a Pagar" : "Nova Conta a Pagar"}
+            </DialogTitle>
+            <DialogDescription>
+              Preencha os dados da conta a pagar. Campos com * são obrigatórios. Use a seção "Informações Avançadas" para maior controle e categorização.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+              {/* Main Information Section */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-900 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Informações Principais
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-blue-900 font-medium">Descrição *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Ex: Aluguel do escritório"
+                            {...field}
+                            data-testid="input-description"
+                            className="bg-white border-blue-300"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-blue-900 font-medium">Valor *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0,00"
+                            {...field}
+                            data-testid="input-amount"
+                            className="bg-white border-blue-300"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="issueDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-blue-900 font-medium">Data de Emissão</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} className="bg-white border-blue-300" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="dueDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-blue-900 font-medium">Data de Vencimento *</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} data-testid="input-due-date" className="bg-white border-blue-300" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="invoiceNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-blue-900 font-medium">Nº da Fatura</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="0001/2024"
+                            {...field}
+                            className="bg-white border-blue-300"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="lateFees"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-blue-900 font-medium">Juros / Multa</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0,00"
+                            {...field}
+                            data-testid="input-late-fees"
+                            className="bg-white border-blue-300"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="discount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-blue-900 font-medium">Desconto Previsto</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0,00"
+                            {...field}
+                            className="bg-white border-blue-300"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
 
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-900 p-4 rounded-lg border border-green-200 dark:border-green-800">
-                  <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-4 flex items-center gap-2">
-                    <DollarSign className="h-5 w-5" />
-                    Detalhes Financeiros
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-900 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-4 flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Detalhes Financeiros
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="supplierId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-green-900 font-medium">Fornecedor *</FormLabel>
+                        <div className="flex gap-2">
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-supplier" className="bg-white border-green-300 flex-1">
+                                <SelectValue placeholder="Selecione um fornecedor" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {suppliers?.map((supplier) => (
+                                <SelectItem key={supplier.id} value={supplier.id}>
+                                  {supplier.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="border-green-300 hover:bg-green-50"
+                            onClick={() => setNewSupplierDialogOpen(true)}
+                            title="Cadastrar Novo Fornecedor"
+                          >
+                            <Plus className="h-4 w-4 text-green-700" />
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="categoryId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-green-900 font-medium">Categoria *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-category" className="bg-white border-green-300">
+                              <SelectValue placeholder="Selecione uma categoria" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {expenseCategories?.map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="costCenterId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-green-900 font-medium">Centro de Custo *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-cost-center" className="bg-white border-green-300">
+                              <SelectValue placeholder="Selecione um centro de custo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {costCenters?.map((cc) => (
+                              <SelectItem key={cc.id} value={cc.id}>
+                                {cc.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950 dark:to-violet-900 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100 mb-4 flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Informações Adicionais
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="paymentMethod"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-purple-900 font-medium">Meio de Pagamento *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-payment-method" className="bg-white border-purple-300">
+                              <SelectValue placeholder="Selecione o meio de pagamento" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="boleto">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                Boleto
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="credit_card">
+                              <div className="flex items-center gap-2">
+                                <CreditCard className="h-4 w-4" />
+                                Cartão de Crédito
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="debit_card">
+                              <div className="flex items-center gap-2">
+                                <CreditCard className="h-4 w-4" />
+                                Cartão de Débito
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="cash">
+                              <div className="flex items-center gap-2">
+                                <Banknote className="h-4 w-4" />
+                                Dinheiro
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="transfer">
+                              <div className="flex items-center gap-2">
+                                <Wallet className="h-4 w-4" />
+                                Transferência Bancária
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="pix">
+                              <div className="flex items-center gap-2">
+                                <Wallet className="h-4 w-4" />
+                                PIX
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="recurrence"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-purple-900 font-medium">Recorrência</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-recurrence" className="bg-white border-purple-300">
+                              <SelectValue placeholder="Sem recorrência" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">Sem recorrência</SelectItem>
+                            <SelectItem value="weekly">Semanal</SelectItem>
+                            <SelectItem value="monthly">Mensal</SelectItem>
+                            <SelectItem value="yearly">Anual</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {recurrence && recurrence !== "none" && (
                     <FormField
                       control={form.control}
-                      name="supplierId"
+                      name="recurrenceEnd"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-green-900 font-medium">Fornecedor *</FormLabel>
+                        <FormItem className="animate-in fade-in slide-in-from-top-1 duration-200">
+                          <FormLabel className="text-purple-900 font-medium">Até Quando? *</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} className="bg-white border-purple-300" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem className="mt-4">
+                      <FormLabel className="text-purple-900 font-medium">Observações</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Informações adicionais..."
+                          {...field}
+                          data-testid="input-notes"
+                          className="bg-white border-purple-300 min-h-[100px]"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Advanced Information Section */}
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-900 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
+                <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-100 mb-4 flex items-center gap-2">
+                  <Tag className="h-5 w-5" />
+                  Informações Avançadas
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-amber-900 font-medium">Prioridade</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="bg-white border-amber-300">
+                              <SelectValue placeholder="Selecione a prioridade" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="low">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                Baixa
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="medium">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                Média
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="high">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                Alta
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="urgent">
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="h-4 w-4 text-red-500" />
+                                Urgente
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="department"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-amber-900 font-medium">Departamento</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Ex: Administrativo, Produção"
+                            {...field}
+                            className="bg-white border-amber-300"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="project"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-amber-900 font-medium">Projeto</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Ex: Expansão 2024"
+                            {...field}
+                            className="bg-white border-amber-300"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="invoiceType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-amber-900 font-medium">Tipo de Fatura</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="bg-white border-amber-300">
+                              <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="nf">Nota Fiscal</SelectItem>
+                            <SelectItem value="invoice">Fatura</SelectItem>
+                            <SelectItem value="receipt">Recibo</SelectItem>
+                            <SelectItem value="contract">Contrato</SelectItem>
+                            <SelectItem value="other">Outro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="approvalStatus"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-amber-900 font-medium">Status de Aprovação</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="bg-white border-amber-300">
+                              <SelectValue placeholder="Selecione o status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="pending">
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-yellow-500" />
+                                Pendente
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="approved">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                Aprovado
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="rejected">
+                              <div className="flex items-center gap-2">
+                                <X className="h-4 w-4 text-red-500" />
+                                Rejeitado
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="taxRate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-amber-900 font-medium">Alíquota de Imposto (%)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0,00"
+                            {...field}
+                            className="bg-white border-amber-300"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="taxAmount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-amber-900 font-medium">Valor do Imposto</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0,00"
+                            {...field}
+                            className="bg-white border-amber-300"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="netAmount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-amber-900 font-medium">Valor Líquido</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0,00"
+                            {...field}
+                            className="bg-white border-amber-300"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="installments"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-amber-900 font-medium">Parcelas</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Ex: 12"
+                            {...field}
+                            className="bg-white border-amber-300"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="currentInstallment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-amber-900 font-medium">Parcela Atual</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Ex: 1/12"
+                            {...field}
+                            className="bg-white border-amber-300"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="approvedBy"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-amber-900 font-medium">Aprovado por</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Nome do aprovador"
+                            {...field}
+                            className="bg-white border-amber-300"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="attachment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-amber-900 font-medium">Anexo</FormLabel>
+                        <FormControl>
                           <div className="flex gap-2">
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger data-testid="select-supplier" className="bg-white border-green-300 flex-1">
-                                  <SelectValue placeholder="Selecione um fornecedor" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {suppliers?.map((supplier) => (
-                                  <SelectItem key={supplier.id} value={supplier.id}>
-                                    {supplier.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <Input
+                              placeholder="URL do anexo ou caminho do arquivo"
+                              {...field}
+                              className="bg-white border-amber-300 flex-1"
+                            />
                             <Button
                               type="button"
                               variant="outline"
                               size="icon"
-                              className="border-green-300 hover:bg-green-50"
-                              onClick={() => setNewSupplierDialogOpen(true)}
-                              title="Cadastrar Novo Fornecedor"
+                              className="border-amber-300 hover:bg-amber-50"
+                              title="Anexar arquivo"
                             >
-                              <Plus className="h-4 w-4 text-green-700" />
+                              <Paperclip className="h-4 w-4 text-amber-700" />
                             </Button>
                           </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="categoryId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-green-900 font-medium">Categoria *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-category" className="bg-white border-green-300">
-                                <SelectValue placeholder="Selecione uma categoria" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {expenseCategories?.map((category) => (
-                                <SelectItem key={category.id} value={category.id}>
-                                  {category.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="costCenterId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-green-900 font-medium">Centro de Custo *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-cost-center" className="bg-white border-green-300">
-                                <SelectValue placeholder="Selecione um centro de custo" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {costCenters?.map((cc) => (
-                                <SelectItem key={cc.id} value={cc.id}>
-                                  {cc.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950 dark:to-violet-900 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-                  <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100 mb-4 flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Informações Adicionais
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="paymentMethod"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-purple-900 font-medium">Meio de Pagamento *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-payment-method" className="bg-white border-purple-300">
-                                <SelectValue placeholder="Selecione o meio de pagamento" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="boleto">
-                                <div className="flex items-center gap-2">
-                                  <FileText className="h-4 w-4" />
-                                  Boleto
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="credit_card">
-                                <div className="flex items-center gap-2">
-                                  <CreditCard className="h-4 w-4" />
-                                  Cartão de Crédito
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="debit_card">
-                                <div className="flex items-center gap-2">
-                                  <CreditCard className="h-4 w-4" />
-                                  Cartão de Débito
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="cash">
-                                <div className="flex items-center gap-2">
-                                  <Banknote className="h-4 w-4" />
-                                  Dinheiro
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="transfer">
-                                <div className="flex items-center gap-2">
-                                  <Wallet className="h-4 w-4" />
-                                  Transferência Bancária
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="pix">
-                                <div className="flex items-center gap-2">
-                                  <Wallet className="h-4 w-4" />
-                                  PIX
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="recurrence"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-purple-900 font-medium">Recorrência</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-recurrence" className="bg-white border-purple-300">
-                                <SelectValue placeholder="Sem recorrência" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">Sem recorrência</SelectItem>
-                              <SelectItem value="weekly">Semanal</SelectItem>
-                              <SelectItem value="monthly">Mensal</SelectItem>
-                              <SelectItem value="yearly">Anual</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    {recurrence && recurrence !== "none" && (
-                      <FormField
-                        control={form.control}
-                        name="recurrenceEnd"
-                        render={({ field }) => (
-                          <FormItem className="animate-in fade-in slide-in-from-top-1 duration-200">
-                            <FormLabel className="text-purple-900 font-medium">Até Quando? *</FormLabel>
-                            <FormControl>
-                              <Input type="date" {...field} className="bg-white border-purple-300" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem className="mt-4">
-                        <FormLabel className="text-purple-900 font-medium">Observações</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Informações adicionais..."
-                            {...field}
-                            data-testid="input-notes"
-                            className="bg-white border-purple-300 min-h-[100px]"
-                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="internalNotes"
+                  render={({ field }) => (
+                    <FormItem className="mt-4">
+                      <FormLabel className="text-amber-900 font-medium">Observações Internas</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Notas internas para equipe..."
+                          {...field}
+                          className="bg-white border-amber-300 min-h-[80px]"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-                {/* Advanced Information Section */}
-                <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-900 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
-                  <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-100 mb-4 flex items-center gap-2">
-                    <Tag className="h-5 w-5" />
-                    Informações Avançadas
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="priority"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-amber-900 font-medium">Prioridade</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="bg-white border-amber-300">
-                                <SelectValue placeholder="Selecione a prioridade" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="low">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                  Baixa
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="medium">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                  Média
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="high">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                  Alta
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="urgent">
-                                <div className="flex items-center gap-2">
-                                  <AlertCircle className="h-4 w-4 text-red-500" />
-                                  Urgente
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="department"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-amber-900 font-medium">Departamento</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Ex: Administrativo, Produção"
-                              {...field}
-                              className="bg-white border-amber-300"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="project"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-amber-900 font-medium">Projeto</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Ex: Expansão 2024"
-                              {...field}
-                              className="bg-white border-amber-300"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <FormField
-                      control={form.control}
-                      name="invoiceType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-amber-900 font-medium">Tipo de Fatura</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="bg-white border-amber-300">
-                                <SelectValue placeholder="Selecione o tipo" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="nf">Nota Fiscal</SelectItem>
-                              <SelectItem value="invoice">Fatura</SelectItem>
-                              <SelectItem value="receipt">Recibo</SelectItem>
-                              <SelectItem value="contract">Contrato</SelectItem>
-                              <SelectItem value="other">Outro</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="approvalStatus"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-amber-900 font-medium">Status de Aprovação</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="bg-white border-amber-300">
-                                <SelectValue placeholder="Selecione o status" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="pending">
-                                <div className="flex items-center gap-2">
-                                  <Clock className="h-4 w-4 text-yellow-500" />
-                                  Pendente
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="approved">
-                                <div className="flex items-center gap-2">
-                                  <CheckCircle className="h-4 w-4 text-green-500" />
-                                  Aprovado
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="rejected">
-                                <div className="flex items-center gap-2">
-                                  <X className="h-4 w-4 text-red-500" />
-                                  Rejeitado
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                    <FormField
-                      control={form.control}
-                      name="taxRate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-amber-900 font-medium">Alíquota de Imposto (%)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0,00"
-                              {...field}
-                              className="bg-white border-amber-300"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="taxAmount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-amber-900 font-medium">Valor do Imposto</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0,00"
-                              {...field}
-                              className="bg-white border-amber-300"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="netAmount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-amber-900 font-medium">Valor Líquido</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0,00"
-                              {...field}
-                              className="bg-white border-amber-300"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <FormField
-                      control={form.control}
-                      name="installments"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-amber-900 font-medium">Parcelas</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="Ex: 12"
-                              {...field}
-                              className="bg-white border-amber-300"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="currentInstallment"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-amber-900 font-medium">Parcela Atual</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="Ex: 1/12"
-                              {...field}
-                              className="bg-white border-amber-300"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <FormField
-                      control={form.control}
-                      name="approvedBy"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-amber-900 font-medium">Aprovado por</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Nome do aprovador"
-                              {...field}
-                              className="bg-white border-amber-300"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="attachment"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-amber-900 font-medium">Anexo</FormLabel>
-                          <FormControl>
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder="URL do anexo ou caminho do arquivo"
-                                {...field}
-                                className="bg-white border-amber-300 flex-1"
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                className="border-amber-300 hover:bg-amber-50"
-                                title="Anexar arquivo"
-                              >
-                                <Paperclip className="h-4 w-4 text-amber-700" />
-                              </Button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="internalNotes"
-                    render={({ field }) => (
-                      <FormItem className="mt-4">
-                        <FormLabel className="text-amber-900 font-medium">Observações Internas</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Notas internas para equipe..."
-                            {...field}
-                            className="bg-white border-amber-300 min-h-[80px]"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <DialogFooter className="flex gap-2 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleOpenChange(false)}
-                    data-testid="button-cancel"
-                    className="px-6"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={createMutation.isPending || updateMutation.isPending}
-                    data-testid="button-submit"
-                    className="px-6"
-                  >
-                    {createMutation.isPending || updateMutation.isPending
-                      ? "Salvando..."
-                      : editingAccount
-                        ? "Atualizar"
-                        : "Cadastrar"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
+              <DialogFooter className="flex gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleOpenChange(false)}
+                  data-testid="button-cancel"
+                  className="px-6"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  data-testid="button-submit"
+                  className="px-6"
+                >
+                  {createMutation.isPending || updateMutation.isPending
+                    ? "Salvando..."
+                    : editingAccount
+                      ? "Atualizar"
+                      : "Cadastrar"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
       {/* New Supplier Dialog */}
       <Dialog open={newSupplierDialogOpen} onOpenChange={setNewSupplierDialogOpen}>
         <DialogContent>
@@ -1749,8 +1747,8 @@ export default function AccountsPayable() {
                         const netValue = amountNum + lateFeesNum - discountNum;
 
                         return (
-                          <TableRow 
-                            key={account.id} 
+                          <TableRow
+                            key={account.id}
                             data-testid={`row-payable-${account.id}`}
                             className={`hover:bg-muted/50 transition-colors ${index % 2 === 0 ? 'bg-background' : 'bg-muted/10'}`}
                           >
@@ -1845,7 +1843,7 @@ export default function AccountsPayable() {
                                     Clonar
                                   </DropdownMenuItem>
                                   {account.status !== "paid" && (
-                                    <DropdownMenuItem 
+                                    <DropdownMenuItem
                                       onClick={() => handleMarkAsPaid(account)}
                                       className="text-green-600"
                                     >
@@ -1853,7 +1851,7 @@ export default function AccountsPayable() {
                                       Marcar como Pago
                                     </DropdownMenuItem>
                                   )}
-                                  <DropdownMenuItem 
+                                  <DropdownMenuItem
                                     onClick={() => deleteMutation.mutate(account.id)}
                                     className="text-red-600"
                                   >
@@ -1870,52 +1868,7 @@ export default function AccountsPayable() {
                   </Table>
                 </div>
               ) : (
-                              >
-                                <Copy className="h-4 w-4 mr-2" />
-                                Clonar Lançamento
-                              </DropdownMenuItem>
-                              {account.status !== "paid" && (
-                                <DropdownMenuItem
-                                  onClick={() => handleMarkAsPaid(account)}
-                                  data-testid={`button-mark-paid-${account.id}`}
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Marcar como Pago
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem
-                                onClick={() => handleEdit(account)}
-                                data-testid={`button-edit-${account.id}`}
-                                disabled={account.status === "paid"}
-                              >
-                                <Edit className="h-4 w-4 mr-2" />
-                                Editar
-                                {account.status === "paid" && (
-                                  <span className="ml-2 text-xs text-gray-400">(Não disponível)</span>
-                                )}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => deleteMutation.mutate(account.id)}
-                                data-testid={`button-delete-${account.id}`}
-                                className="text-red-600"
-                                disabled={account.status === "paid"}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Desativar
-                                {account.status === "paid" && (
-                                  <span className="ml-2 text-xs text-gray-400">(Não disponível)</span>
-                                )}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-              ) : (
+                // Visualização em Cards
                 // Visualização em Cards
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredAccounts.map((account) => {
@@ -1932,8 +1885,87 @@ export default function AccountsPayable() {
                       <Card key={account.id} className="hover:shadow-lg transition-all duration-200 group">
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-3">
+                            <Badge className={`${getStatusColor(displayStatus)} px-3 py-1`}>
+                              <div className="flex items-center gap-2">
+                                {displayStatus === "paid" && <CheckCircle className="h-3 w-3" />}
+                                {displayStatus === "pending" && <Clock className="h-3 w-3" />}
+                                {displayStatus === "overdue" && <AlertTriangle className="h-3 w-3" />}
+                                <span className="font-medium">{getStatusLabel(displayStatus)}</span>
+                              </div>
+                            </Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <MoreHorizontal className="h-4 w-4" />
                                 </Button>
-                              )}
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEdit(account)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleClone(account)}>
+                                  <Copy className="h-4 w-4 mr-2" />
+                                  Clonar
+                                </DropdownMenuItem>
+                                {account.status !== "paid" && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleMarkAsPaid(account)}
+                                    className="text-green-600"
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Marcar como Pago
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
+                                  onClick={() => deleteMutation.mutate(account.id)}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Desativar
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+
+                          <h3 className="font-semibold text-lg mb-2 group-hover:text-red-600 transition-colors truncate" title={account.description}>
+                            {account.description}
+                          </h3>
+
+                          <div className="space-y-2 mb-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Fornecedor:</span>
+                              <span className="text-sm font-medium truncate max-w-[150px]">
+                                {supplier ? supplier.name : "-"}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Categoria:</span>
+                              <span className="text-sm font-medium">
+                                {category ? category.name : "-"}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Vencimento:</span>
+                              <span className="text-sm font-medium">{formatDate(account.dueDate)}</span>
+                            </div>
+                          </div>
+
+                          <div className="border-t pt-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Valor:</span>
+                              <span className="font-bold text-lg text-red-600">-{formatCurrency(account.amount)}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Valor Líquido:</span>
+                              <span className="font-bold text-lg">
+                                <span className={netValue > amountNum ? "text-orange-600" : netValue < amountNum ? "text-green-600" : "text-red-600"}>
+                                  -{formatCurrency(netValue.toFixed(2))}
+                                </span>
+                              </span>
                             </div>
                           </div>
                         </CardContent>
@@ -1957,4 +1989,5 @@ export default function AccountsPayable() {
         </CardContent>
       </Card>
     </div>
+  );
 }
