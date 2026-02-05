@@ -7,6 +7,10 @@
       "destination": "/api/test.ts"
     },
     {
+      "source": "/api/debug-app",
+      "destination": "/api/debug-app.ts"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index.ts"
     },
