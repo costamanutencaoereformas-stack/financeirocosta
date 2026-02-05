@@ -1,6 +1,13 @@
 import "dotenv/config";
+process.on('uncaughtException', (err) => {
+  console.error('FATAL: Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('FATAL: Unhandled Rejection at:', promise, 'reason:', reason);
+});
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { setupAuth } from "./auth";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { storage } from "./storage";
@@ -48,6 +55,8 @@ declare module "http" {
 }
 
 // Basic middleware
+setupAuth(app);
+
 app.use(express.json({
   verify: (req, _res, buf) => {
     req.rawBody = buf;

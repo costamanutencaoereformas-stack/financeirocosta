@@ -4,12 +4,16 @@ import passport from "passport";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, requireAdmin, requireFinancial, requireViewer } from "./auth";
 import supabaseAuthRoutes from "./routes/supabase-auth";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  setupAuth(app);
+  // setupAuth(app); // Called in index.ts
 
   // Register Supabase Auth routes
   app.use("/api/supabase-auth", supabaseAuthRoutes);
@@ -75,10 +79,6 @@ export async function registerRoutes(
       }
 
       // Hash password and create user
-      const { scrypt, randomBytes } = await import("crypto");
-      const { promisify } = await import("util");
-      const scryptAsync = promisify(scrypt);
-
       const salt = randomBytes(16).toString("hex");
       const buf = (await scryptAsync(password, salt, 64)) as Buffer;
       const hashedPassword = `${buf.toString("hex")}.${salt}`;
