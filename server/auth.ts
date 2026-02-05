@@ -6,7 +6,12 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { pool } from "./db";
+import connectPgSimple from "connect-pg-simple";
+import createMemoryStore from "memorystore";
 import type { User, UserRole } from "@shared/schema";
+
+const MemoryStore = createMemoryStore(session);
+const PgSession = connectPgSimple(session);
 const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string): Promise<string> {
@@ -54,18 +59,14 @@ declare global {
 // function hashPassword and comparePasswords removed as they relied on local password storage
 
 
-export async function setupAuth(app: Express): Promise<void> {
+export function setupAuth(app: Express): void {
   let sessionStore: any;
 
   if (process.env.VERCEL) {
-    const createMemoryStore = (await import("memorystore")).default;
-    const MemoryStore = createMemoryStore(session);
     sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
   } else {
-    const connectPgSimple = (await import("connect-pg-simple")).default;
-    const PgSession = connectPgSimple(session);
     sessionStore = new PgSession({
       pool,
       tableName: "user_sessions",
