@@ -7,8 +7,7 @@ import { storage } from "./storage";
 import type { Express, RequestHandler } from "express";
 import type { User, UserRole } from "@shared/schema";
 import connectPgSimple from "connect-pg-simple";
-import pkg from "pg";
-const { Pool } = pkg;
+import { pool } from "./db";
 
 const scryptAsync = promisify(scrypt);
 
@@ -43,10 +42,6 @@ declare global {
 
 export function setupAuth(app: Express): void {
   const PgSession = connectPgSimple(session);
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }, // Forçado para garantir compatibilidade com Supabase/pooler
-  });
 
   app.use(
     session({
