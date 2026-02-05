@@ -82,14 +82,26 @@ app.use((req, res, next) => {
 });
 
 // Initialize routes asynchronously but start registration immediately
-const routesPromise = registerRoutes(httpServer, app);
+const routesPromise = registerRoutes(httpServer, app).catch(err => {
+  log(`✗ Critical error during route registration: ${err}`);
+  console.error(err);
+  return null; // Return null to indicate failure
+});
 
 // Middleware to ensure routes are registered before handling requests (critical for Vercel/serverless)
-app.use(async (_req, _res, next) => {
+app.use(async (req, _res, next) => {
   try {
-    await routesPromise;
+    const routes = await routesPromise;
+    if (routes === null) {
+      // If routes failed to register, avoid hanging and return error
+      return _res.status(500).json({
+        message: "Internal Server Error: Application failed to initialize correctly.",
+        details: process.env.NODE_ENV === "development" ? "Check server logs for route registration errors." : undefined
+      });
+    }
     next();
   } catch (err) {
+    log(`✗ Error in routes registration middleware: ${err}`);
     next(err);
   }
 });

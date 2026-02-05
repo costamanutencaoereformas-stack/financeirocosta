@@ -1,13 +1,16 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import type { Express, RequestHandler } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import type { Express, RequestHandler } from "express";
-import type { User, UserRole } from "@shared/schema";
-import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
+import connectPgSimple from "connect-pg-simple";
+import createMemoryStore from "memorystore";
+import type { User, UserRole } from "@shared/schema";
+
+const MemoryStore = createMemoryStore(session);
 
 const scryptAsync = promisify(scrypt);
 
@@ -43,13 +46,19 @@ declare global {
 export function setupAuth(app: Express): void {
   const PgSession = connectPgSimple(session);
 
+  const sessionStore = process.env.VERCEL
+    ? new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    })
+    : new PgSession({
+      pool,
+      tableName: "user_sessions",
+      createTableIfMissing: false, // Disabilitado para evitar DDL em poolers de transação
+    });
+
   app.use(
     session({
-      store: new PgSession({
-        pool,
-        tableName: "user_sessions",
-        createTableIfMissing: true,
-      }),
+      store: sessionStore,
       secret: process.env.SESSION_SECRET || "fincontrol-secret-key-change-in-production",
       resave: false,
       saveUninitialized: false,
