@@ -43,28 +43,41 @@ export async function registerRoutes(
   });
 
   app.post("/api/auth/login", (req, res, next) => {
+    console.log(`[Login API] Starting login for: ${req.body?.username}`);
     passport.authenticate("local", (err: any, user: any, info: any) => {
-      if (err) {
-        return res.status(500).json({ error: "Erro interno do servidor" });
-      }
-      if (!user) {
-        return res.status(401).json({ error: "Usuário ou senha inválidos" });
-      }
-      req.logIn(user, (err) => {
+      try {
         if (err) {
-          return res.status(500).json({ error: "Erro ao fazer login" });
+          console.error("[Login API] Passport error:", err);
+          return res.status(500).json({ error: "Erro interno do servidor", details: err.message });
         }
-        return res.json({
-          user: {
-            id: user.id,
-            username: user.username,
-            fullName: user.fullName,
-            role: user.role,
-            status: user.status,
-            team: user.team
+        if (!user) {
+          console.warn("[Login API] Authentication failed for:", req.body?.username);
+          return res.status(401).json({ error: "Usuário ou senha inválidos" });
+        }
+
+        console.log(`[Login API] Passport authenticated ${user.username}, calling req.logIn`);
+        req.logIn(user, (err) => {
+          if (err) {
+            console.error("[Login API] session logIn error:", err);
+            return res.status(500).json({ error: "Erro ao estabelecer sessão" });
           }
+
+          console.log(`[Login API] Session established for ${user.username}`);
+          return res.json({
+            user: {
+              id: user.id,
+              username: user.username,
+              fullName: user.fullName,
+              role: user.role,
+              status: user.status,
+              team: user.team
+            }
+          });
         });
-      });
+      } catch (handlerError) {
+        console.error("[Login API] Critical handler error:", handlerError);
+        res.status(500).json({ error: "Erro crítico no servidor" });
+      }
     })(req, res, next);
   });
 

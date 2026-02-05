@@ -21,10 +21,26 @@ async function hashPassword(password: string): Promise<string> {
 }
 
 async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  try {
+    const parts = (stored || "").split(".");
+    if (parts.length !== 2) {
+      console.warn("[Auth] Password format invalid (missing salt)");
+      return false;
+    }
+    const [hashed, salt] = parts;
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+
+    if (hashedBuf.length !== suppliedBuf.length) {
+      console.warn("[Auth] Password length mismatch");
+      return false;
+    }
+
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error("[Auth] Error comparing passwords:", error);
+    return false;
+  }
 }
 
 declare global {
@@ -78,16 +94,20 @@ export function setupAuth(app: Express): void {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        console.log(`[Auth Strategy] Verifying user: ${username}`);
         const user = await storage.getUserByUsername(username);
         if (!user || !user.password) {
+          console.log(`[Auth Strategy] User not found or no password: ${username}`);
           return done(null, false);
         }
 
         const isValid = await comparePasswords(password, user.password);
         if (!isValid) {
+          console.log(`[Auth Strategy] Invalid password for: ${username}`);
           return done(null, false);
         }
 
+        console.log(`[Auth Strategy] Success for: ${username}`);
         return done(null, {
           id: user.id,
           username: user.username,
@@ -97,6 +117,7 @@ export function setupAuth(app: Express): void {
           team: user.team,
         });
       } catch (error) {
+        console.error(`[Auth Strategy] Error:`, error);
         return done(error);
       }
     })

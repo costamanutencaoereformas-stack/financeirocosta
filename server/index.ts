@@ -14,6 +14,8 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 
+console.log("[Server] Modules loaded, initializing application...");
+
 const app = express();
 const httpServer = createServer(app);
 
