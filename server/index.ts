@@ -57,6 +57,10 @@ declare module "http" {
 }
 
 // Basic middleware
+app.get("/api/raw-health", (req, res) => {
+  res.json({ status: "alive", time: new Date().toISOString() });
+});
+
 app.use(express.json({
   verify: (req, _res, buf) => {
     req.rawBody = buf;
