@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import passport from "passport";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, requireAdmin, requireFinancial, requireViewer } from "./auth";
+console.log("[Routes] Module loading started...");
 import supabaseAuthRoutes from "./routes/supabase-auth";
 import { scrypt, randomBytes, randomUUID } from "crypto";
 import { promisify } from "util";

@@ -1,5 +1,6 @@
 import { eq, and, or, lt, lte, gte, sql } from "drizzle-orm";
 import { db } from "./db";
+console.log("[Storage] Module loading started...");
 import {
   users, suppliers, clients, categories, costCenters,
   accountsPayable, accountsReceivable, mercadoPagoTransactions, cashFlowEntries, balanceAdjustments, notes,
