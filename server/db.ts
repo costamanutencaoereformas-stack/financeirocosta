@@ -6,6 +6,8 @@ import * as schema from "@shared/schema";
 
 if (!process.env.DATABASE_URL) {
   console.error("❌ DATABASE_URL environment variable is not set!");
+} else {
+  console.log(`[DB] DATABASE_URL is set (length: ${process.env.DATABASE_URL.length})`);
 }
 
 const connectionString = process.env.DATABASE_URL || "";

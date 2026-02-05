@@ -4,7 +4,7 @@ import passport from "passport";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, requireAdmin, requireFinancial, requireViewer } from "./auth";
 import supabaseAuthRoutes from "./routes/supabase-auth";
-import { scrypt, randomBytes } from "crypto";
+import { scrypt, randomBytes, randomUUID } from "crypto";
 import { promisify } from "util";
 
 const scryptAsync = promisify(scrypt);
@@ -86,6 +86,15 @@ export async function registerRoutes(
       const { username, email, password, fullName } = req.body;
       console.log(`[Register API] Starting registration for: ${username}`);
 
+      // Database connection test
+      try {
+        const dbCheck = await db.execute(sql`SELECT 1`);
+        console.log(`[Register API] Database check OK: ${JSON.stringify(dbCheck)}`);
+      } catch (dbErr: any) {
+        console.error(`[Register API] Database check FAILED:`, dbErr);
+        return res.status(500).json({ error: "Banco de dados indisponível", details: dbErr.message });
+      }
+
       // Check if user already exists
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
@@ -99,8 +108,12 @@ export async function registerRoutes(
       const buf = (await scryptAsync(password, salt, 64)) as Buffer;
       const hashedPassword = `${buf.toString("hex")}.${salt}`;
 
-      console.log(`[Register API] Creating user in storage...`);
+      // Generate UUID in JS to avoid dependency on gen_random_uuid() extension
+      const userId = randomUUID();
+
+      console.log(`[Register API] Creating user in storage with ID: ${userId}`);
       const newUser = await storage.createUser({
+        id: userId,
         username,
         email,
         password: hashedPassword,
@@ -111,33 +124,35 @@ export async function registerRoutes(
       });
       console.log(`[Register API] User created successfully: ${newUser.id}`);
 
-      // Auto-login after registration
-      req.login({
+      // Auto-login after registration - WAIT for it
+      const userToLogin = {
         id: newUser.id,
         username: newUser.username,
         fullName: newUser.fullName,
         role: newUser.role,
         status: newUser.status,
         team: newUser.team
-      }, (err) => {
+      };
+
+      req.login(userToLogin, (err) => {
         if (err) {
           console.error("[Register API] Auto-login error:", err);
+          // Return the user anyway as they were created
+          return res.json({ user: userToLogin, loginError: err.message });
         }
+
+        console.log(`[Register API] Auto-login success for: ${username}`);
+        return res.json({ user: userToLogin });
       });
 
-      res.json({
-        user: {
-          id: newUser.id,
-          username: newUser.username,
-          fullName: newUser.fullName,
-          role: newUser.role,
-          status: newUser.status,
-          team: newUser.team
-        }
-      });
     } catch (error: any) {
       console.error("[Register API] registration error:", error);
-      res.status(500).json({ error: "Erro ao criar usuário", details: error.message, stack: error.stack });
+      res.status(500).json({
+        error: "Erro ao criar usuário",
+        details: error.message,
+        stack: error.stack,
+        type: error.name
+      });
     }
   });
 

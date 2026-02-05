@@ -12,9 +12,7 @@ const allowlist = [
   "date-fns",
   "drizzle-orm",
   "drizzle-zod",
-  "express",
   "express-rate-limit",
-  "express-session",
   "jsonwebtoken",
   "memorystore",
   "multer",
@@ -23,7 +21,6 @@ const allowlist = [
   "openai",
   "passport",
   "passport-local",
-  "pg",
   "stripe",
   "uuid",
   "ws",
@@ -31,6 +28,7 @@ const allowlist = [
   "zod",
   "zod-validation-error",
 ];
+// Note: 'pg' removed from bundle list to avoid native module issues on Vercel
 
 async function buildAll() {
   await rm("dist", { recursive: true, force: true });
