@@ -92,32 +92,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// Initialize routes asynchronously but start registration immediately
-const routesPromise = registerRoutes(httpServer, app).catch(err => {
+// Initialize routes synchronously
+try {
+  registerRoutes(httpServer, app);
+  log("✓ Routes registered successfully");
+} catch (err) {
   log(`✗ Critical error during route registration: ${err}`);
   console.error(err);
-  return null; // Return null to indicate failure
-});
+}
 
-// Middleware to ensure routes are registered before handling requests (critical for Vercel/serverless)
-app.use(async (req, _res, next) => {
-  try {
-    const routes = await routesPromise;
-    if (routes === null) {
-      // If routes failed to register, avoid hanging and return error
-      return _res.status(500).json({
-        message: "Internal Server Error: Application failed to initialize correctly.",
-        details: process.env.NODE_ENV === "development" ? "Check server logs for route registration errors." : undefined
-      });
-    }
-    next();
-  } catch (err) {
-    log(`✗ Error in routes registration middleware: ${err}`);
-    next(err);
-  }
-});
-
-// Error handling middleware (should be after routes but we can define it now)
+// Error handling middleware (should be after routes)
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const status = err.status || err.statusCode || 500;
   const message = err.message || "Internal Server Error";
@@ -125,7 +109,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   res.status(status).json({
     message,
     details: err.message,
-    stack: process.env.NODE_ENV === "development" || true ? err.stack : undefined // Force true for now to debug
+    stack: err.stack
   });
 });
 
@@ -134,8 +118,6 @@ export { app, httpServer };
 if (process.env.NODE_ENV !== "test" && !process.env.VERCEL) {
   (async () => {
     try {
-      await routesPromise;
-
       // Test database connection
       try {
         await db.execute(sql`SELECT 1`);

@@ -60,17 +60,20 @@ declare global {
 
 
 export function setupAuth(app: Express): void {
-  const PgSession = connectPgSimple(session);
+  let sessionStore: any;
 
-  const sessionStore = process.env.VERCEL
-    ? new MemoryStore({
+  if (process.env.VERCEL) {
+    sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
-    })
-    : new PgSession({
+    });
+  } else {
+    const PgSession = connectPgSimple(session);
+    sessionStore = new PgSession({
       pool,
       tableName: "user_sessions",
-      createTableIfMissing: false, // Disabilitado para evitar DDL em poolers de transação
+      createTableIfMissing: false,
     });
+  }
 
   app.use(
     session({
@@ -89,6 +92,7 @@ export function setupAuth(app: Express): void {
 
   app.use(passport.initialize());
   app.use(passport.session());
+  console.log("[Auth] Passport and session initialized");
 
   // Local Strategy for username/password authentication
   passport.use(
