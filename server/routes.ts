@@ -13,9 +13,9 @@ import { sql } from "drizzle-orm";
 const scryptAsync = promisify(scrypt);
 
 export function registerRoutes(
-  httpServer: Server,
+  httpServer: Server | null,
   app: Express
-): Server {
+): Server | null {
   // setupAuth(app); // Called in index.ts
 
   // Register Supabase Auth routes

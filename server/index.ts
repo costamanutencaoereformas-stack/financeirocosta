@@ -17,7 +17,7 @@ import { sql } from "drizzle-orm";
 console.log("[Server] Modules loaded, initializing application...");
 
 const app = express();
-const httpServer = createServer(app);
+const httpServer = process.env.VERCEL ? null : createServer(app);
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -70,27 +70,9 @@ app.use(express.urlencoded({ extended: false }));
 
 // Logging middleware
 app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-      log(logLine);
-    }
-  });
-
+  if (req.path.startsWith("/api")) {
+    log(`${req.method} ${req.path}`);
+  }
   next();
 });
 
@@ -99,7 +81,7 @@ try {
   setupAuth(app);
   log("✓ Auth setup completed");
 
-  registerRoutes(httpServer, app);
+  registerRoutes(httpServer!, app);
   log("✓ Routes registered");
 } catch (err) {
   log(`✗ Critical error during initialization: ${err}`);
