@@ -59,7 +59,7 @@ export default function Login() {
       {/* Visual Side (Hidden on Mobile) */}
       <div className="hidden md:flex md:w-1/2 relative bg-primary items-center justify-center p-12 overflow-hidden">
         <div
-          className="absolute inset-0 z-0 opacity-40 mix-blend-multiply bg-cover bg-center transition-transform hover:scale-110 duration-[10000ms]"
+          className="absolute inset-0 z-0 opacity-40 mix-blend-multiply bg-cover bg-center transition-transform hover:scale-110 duration-[10s]"
           style={{ backgroundImage: "url('/login-bg.png')" }}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-primary/50 to-transparent z-10" />
