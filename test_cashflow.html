@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Fluxo de Caixa</title>
+</head>
+<body>
+    <h1>Teste de API de Fluxo de Caixa</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testCashFlowAPI() {
+            const results = document.getElementById('results');
+            
+            // Primeiro, obter empresas
+            try {
+                const companiesResponse = await fetch('/api/companies', {
+                    credentials: 'include'
+                });
+                const companies = await companiesResponse.json();
+                
+                results.innerHTML += '<h2>Empresas disponíveis:</h2>';
+                companies.forEach(company => {
+                    results.innerHTML += `<p>ID: ${company.id}, Nome: ${company.nome}, Status: ${company.status}</p>`;
+                });
+                
+                // Encontrar a empresa "Conta Manutenção"
+                const contaManutencao = companies.find(c => 
+                    c.nome?.toLowerCase().includes('manutencao') || 
+                    c.razao_social?.toLowerCase().includes('manutencao')
+                );
+                
+                if (contaManutencao) {
+                    results.innerHTML += `<h2>Testando com empresa: ${contaManutencao.nome} (ID: ${contaManutencao.id})</h2>`;
+                    
+                    // Testar API de fluxo de caixa com company ID
+                    const cashFlowResponse = await fetch(`/api/cash-flow?companyId=${contaManutencao.id}`, {
+                        credentials: 'include'
+                    });
+                    const cashFlowData = await cashFlowResponse.json();
+                    
+                    results.innerHTML += `<h3>Fluxo de Caixa (${cashFlowData.length} itens):</h3>`;
+                    results.innerHTML += `<pre>${JSON.stringify(cashFlowData, null, 2)}</pre>`;
+                    
+                    // Testar API de summary
+                    const summaryResponse = await fetch(`/api/cash-flow/summary?companyId=${contaManutencao.id}`, {
+                        credentials: 'include'
+                    });
+                    const summaryData = await summaryResponse.json();
+                    
+                    results.innerHTML += `<h3>Summary:</h3>`;
+                    results.innerHTML += `<pre>${JSON.stringify(summaryData, null, 2)}</pre>`;
+                    
+                } else {
+                    results.innerHTML += '<h2>Empresa "Conta Manutenção" não encontrada</h2>';
+                }
+                
+            } catch (error) {
+                results.innerHTML += `<p>Erro: ${error.message}</p>`;
+            }
+        }
+        
+        // Executar teste quando a página carregar
+        testCashFlowAPI();
+    </script>
+</body>
+</html>

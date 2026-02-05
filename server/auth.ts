@@ -45,7 +45,7 @@ export function setupAuth(app: Express): void {
   const PgSession = connectPgSimple(session);
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+    ssl: { rejectUnauthorized: false }, // Forçado para garantir compatibilidade com Supabase/pooler
   });
 
   app.use(

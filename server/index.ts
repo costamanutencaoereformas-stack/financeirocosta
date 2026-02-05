@@ -96,8 +96,16 @@ if (process.env.NODE_ENV !== "test" && !process.env.VERCEL) {
       console.error(err);
     }
 
-    await storage.initializeDatabase(); // Inicializar banco de dados
-    await storage.seedDefaultData();
+    // Inicializar banco de dados e semear dados de forma segura
+    try {
+      await storage.initializeDatabase();
+      log("✓ Database initialized successfully");
+      await storage.seedDefaultData();
+      log("✓ Default data seeded successfully");
+    } catch (err) {
+      log(`⚠ Database initialization/seeding skipped: ${err}`);
+    }
+
     await registerRoutes(httpServer, app);
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

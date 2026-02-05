@@ -1,4 +1,4 @@
-import { eq, and, lte, gte, sql } from "drizzle-orm";
+import { eq, and, or, lt, lte, gte, sql } from "drizzle-orm";
 import { db } from "./db";
 import {
   users, suppliers, clients, categories, costCenters,
@@ -81,18 +81,18 @@ export interface IStorage {
   deleteAccountReceivable(id: string): Promise<boolean>;
 
   getDashboardStats(startDate?: string, endDate?: string, companyId?: string): Promise<DashboardStats>;
-  getCashFlowData(period: string): Promise<CashFlowData[]>;
+  getCashFlowData(period: string, companyId?: string): Promise<CashFlowData[]>;
   getCashFlowDataByDateRange(startDate: string, endDate: string): Promise<CashFlowData[]>;
-  getCashFlowSummary(period: string): Promise<{ totalIncome: number; totalExpense: number; netFlow: number; projectedBalance: number; currentBalance: number; initialBalance: number; finalBalance: number; totalIncomePending: number; totalExpensePending: number; totalIncomeConfirmed: number; totalExpenseConfirmed: number }>;
+  getCashFlowSummary(period: string, companyId?: string): Promise<{ totalIncome: number; totalExpense: number; netFlow: number; projectedBalance: number; currentBalance: number; initialBalance: number; finalBalance: number; totalIncomePending: number; totalExpensePending: number; totalIncomeConfirmed: number; totalExpenseConfirmed: number }>;
   getCashFlowSummaryByDateRange(startDate: string, endDate: string): Promise<{ totalIncome: number; totalExpense: number; netFlow: number; projectedBalance: number; currentBalance: number; initialBalance: number; finalBalance: number; totalIncomePending: number; totalExpensePending: number; totalIncomeConfirmed: number; totalExpenseConfirmed: number }>;
-  getCashFlowKPIs(period: string): Promise<CashFlowKPIs>;
+  getCashFlowKPIs(period: string, companyId?: string): Promise<CashFlowKPIs>;
   getCashFlowKPIsByDateRange(startDate: string, endDate: string): Promise<CashFlowKPIs>;
-  getCashFlowAlerts(): Promise<CashFlowAlert[]>;
-  getDailyMovements(date: string): Promise<DailyMovement[]>;
-  getMovementsByPeriod(period: string): Promise<DailyMovement[]>;
-  getMovementsByDateRange(startDate: string, endDate: string): Promise<DailyMovement[]>;
-  createCashFlowEntry(entry: InsertCashFlowEntry & { userId: string }): Promise<CashFlowEntry>;
-  getCashFlowEntries(): Promise<CashFlowEntry[]>;
+  getCashFlowAlerts(companyId?: string): Promise<CashFlowAlert[]>;
+  getDailyMovements(date: string, companyId?: string): Promise<DailyMovement[]>;
+  getMovementsByPeriod(period: string, companyId?: string): Promise<DailyMovement[]>;
+  getMovementsByDateRange(startDate: string, endDate: string, companyId?: string): Promise<DailyMovement[]>;
+  createCashFlowEntry(entry: InsertCashFlowEntry & { userId: string; companyId?: string }): Promise<CashFlowEntry>;
+  getCashFlowEntries(companyId?: string): Promise<CashFlowEntry[]>;
   createBalanceAdjustment(entry: InsertBalanceAdjustment & { userId: string }): Promise<BalanceAdjustment>;
   getBalanceAdjustments(date?: string): Promise<BalanceAdjustment[]>;
   getCategoryExpenses(): Promise<CategoryExpense[]>;
@@ -555,26 +555,58 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  async getAccountsPayable(companyId?: string): Promise<AccountPayable[]> {
-    const conditions = [];
-    if (companyId) conditions.push(eq(accountsPayable.companyId, companyId));
+  async getAccountsPayable(companyId?: string, startDate?: string, endDate?: string): Promise<AccountPayable[]> {
+    console.log(`[Storage] getAccountsPayable called with companyId: ${companyId}, start: ${startDate}, end: ${endDate}`);
+    const baseConditions = [eq(accountsPayable.active, true)];
 
-    // If no conditions, just query all (or stick to default behavior)
-    // Using simple approach:
-    const query = db.select().from(accountsPayable);
-    if (companyId) {
-      // Drizzle doesn't support chaining .where() on already executed query variable unless typed carefully,
-      // but constructing separate select works.
-      // Better:
-      const results = await db.select().from(accountsPayable).where(eq(accountsPayable.companyId, companyId));
-      return results.map(account => ({ ...account, lateFees: account.lateFees || null }));
+    if (companyId && companyId !== "all") {
+      baseConditions.push(eq(accountsPayable.companyId, companyId));
     }
 
-    const results = await db.select().from(accountsPayable);
-    return results.map(account => ({
-      ...account,
-      lateFees: account.lateFees || null,
-    }));
+    if (startDate && endDate) {
+      baseConditions.push(
+        or(
+          and(gte(accountsPayable.dueDate, startDate), lte(accountsPayable.dueDate, endDate)),
+          and(lt(accountsPayable.dueDate, startDate), eq(accountsPayable.status, "pending")),
+          and(lt(accountsPayable.dueDate, startDate), eq(accountsPayable.status, "overdue"))
+        )
+      );
+    }
+
+    // Join with categories and suppliers to get names
+    const results = await db.select({
+      id: accountsPayable.id,
+      description: accountsPayable.description,
+      amount: accountsPayable.amount,
+      dueDate: accountsPayable.dueDate,
+      paymentDate: accountsPayable.paymentDate,
+      status: accountsPayable.status,
+      supplierId: accountsPayable.supplierId,
+      categoryId: accountsPayable.categoryId,
+      companyId: accountsPayable.companyId,
+      lateFees: accountsPayable.lateFees,
+      discount: accountsPayable.discount,
+      notes: accountsPayable.notes,
+      attachmentUrl: accountsPayable.attachmentUrl,
+      paymentMethod: accountsPayable.paymentMethod,
+      recurrence: accountsPayable.recurrence,
+      recurrenceEnd: accountsPayable.recurrenceEnd,
+      costCenterId: accountsPayable.costCenterId,
+      active: accountsPayable.active,
+      supplierName: suppliers.name,
+      categoryName: categories.name,
+    })
+      .from(accountsPayable)
+      .leftJoin(suppliers, eq(accountsPayable.supplierId, suppliers.id))
+      .leftJoin(categories, eq(accountsPayable.categoryId, categories.id))
+      .where(and(...baseConditions));
+
+    return results.map(a => ({
+      ...a,
+      lateFees: a.lateFees || null,
+      supplierName: a.supplierName || undefined, // Add to return object
+      categoryName: a.categoryName || undefined, // Add to return object
+    })) as AccountPayable[];
   }
 
   async getAccountPayable(id: string): Promise<AccountPayable | undefined> {
@@ -725,11 +757,54 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async getAccountsReceivable(companyId?: string): Promise<AccountReceivable[]> {
-    if (companyId) {
-      return db.select().from(accountsReceivable).where(eq(accountsReceivable.companyId, companyId));
+  async getAccountsReceivable(companyId?: string, startDate?: string, endDate?: string): Promise<AccountReceivable[]> {
+    const baseConditions = [eq(accountsReceivable.active, true)];
+
+    if (companyId && companyId !== "all") {
+      baseConditions.push(eq(accountsReceivable.companyId, companyId));
     }
-    return db.select().from(accountsReceivable);
+
+    if (startDate && endDate) {
+      baseConditions.push(
+        or(
+          and(gte(accountsReceivable.dueDate, startDate), lte(accountsReceivable.dueDate, endDate)),
+          and(lt(accountsReceivable.dueDate, startDate), eq(accountsReceivable.status, "pending")),
+          and(lt(accountsReceivable.dueDate, startDate), eq(accountsReceivable.status, "overdue"))
+        )
+      );
+    }
+
+    // Join with categories and clients to get names
+    const results = await db.select({
+      id: accountsReceivable.id,
+      description: accountsReceivable.description,
+      amount: accountsReceivable.amount,
+      dueDate: accountsReceivable.dueDate,
+      receivedDate: accountsReceivable.receivedDate,
+      status: accountsReceivable.status,
+      clientId: accountsReceivable.clientId,
+      categoryId: accountsReceivable.categoryId,
+      companyId: accountsReceivable.companyId,
+      notes: accountsReceivable.notes,
+      mercadoPagoId: accountsReceivable.mercadoPagoId,
+      discount: accountsReceivable.discount,
+      recurrence: accountsReceivable.recurrence,
+      recurrencePeriod: accountsReceivable.recurrencePeriod,
+      paymentMethod: accountsReceivable.paymentMethod,
+      active: accountsReceivable.active,
+      clientName: clients.name,
+      categoryName: categories.name,
+    })
+      .from(accountsReceivable)
+      .leftJoin(clients, eq(accountsReceivable.clientId, clients.id))
+      .leftJoin(categories, eq(accountsReceivable.categoryId, categories.id))
+      .where(and(...baseConditions));
+
+    return results.map(a => ({
+      ...a,
+      clientName: a.clientName || undefined, // Add to return object
+      categoryName: a.categoryName || undefined, // Add to return object
+    })) as AccountReceivable[];
   }
 
   async getAccountReceivable(id: string): Promise<AccountReceivable | undefined> {
@@ -915,10 +990,18 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getCashFlowData(period: string): Promise<CashFlowData[]> {
-    const allPayables = await db.select().from(accountsPayable);
-    const allReceivables = await db.select().from(accountsReceivable);
-    const allCashFlowEntries = await db.select().from(cashFlowEntries);
+  async getCashFlowData(period: string, companyId?: string): Promise<CashFlowData[]> {
+    let allPayables, allReceivables, allCashFlowEntries;
+
+    if (companyId) {
+      allPayables = await db.select().from(accountsPayable).where(eq(accountsPayable.companyId, companyId));
+      allReceivables = await db.select().from(accountsReceivable).where(eq(accountsReceivable.companyId, companyId));
+      allCashFlowEntries = await db.select().from(cashFlowEntries).where(eq(cashFlowEntries.companyId, companyId));
+    } else {
+      allPayables = await db.select().from(accountsPayable);
+      allReceivables = await db.select().from(accountsReceivable);
+      allCashFlowEntries = await db.select().from(cashFlowEntries);
+    }
 
     const today = new Date();
     const data: Map<string, CashFlowData> = new Map();
@@ -1876,7 +1959,7 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async createCashFlowEntry(entry: InsertCashFlowEntry & { userId: string }): Promise<CashFlowEntry> {
+  async createCashFlowEntry(entry: InsertCashFlowEntry & { userId: string; companyId?: string }): Promise<CashFlowEntry> {
     const [newEntry] = await db.insert(cashFlowEntries).values({
       ...entry,
       amount: entry.amount,

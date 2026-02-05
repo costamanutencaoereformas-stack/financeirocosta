@@ -70,8 +70,30 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
     async ({ queryKey }) => {
-      const url = appendCompanyParam(queryKey.join("/") as string);
-      const res = await fetch(url, {
+      // Handle complex queryKeys properly
+      let url: string;
+      if (typeof queryKey[0] === 'string') {
+        url = queryKey[0];
+        // Add query parameters if they exist
+        if (queryKey.length > 1 && typeof queryKey[1] === 'object') {
+          const params = new URLSearchParams();
+          const queryParams = queryKey[1] as Record<string, any>;
+          Object.entries(queryParams).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              params.append(key, String(value));
+            }
+          });
+          const paramString = params.toString();
+          if (paramString) {
+            url += (url.includes('?') ? '&' : '?') + paramString;
+          }
+        }
+      } else {
+        url = queryKey.join("/") as string;
+      }
+      
+      const finalUrl = appendCompanyParam(url);
+      const res = await fetch(finalUrl, {
         headers: { ...getCompanyHeaders() },
         credentials: "include",
       });

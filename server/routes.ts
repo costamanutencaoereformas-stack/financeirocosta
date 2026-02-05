@@ -361,9 +361,21 @@ export async function registerRoutes(
   });
 
   app.get("/api/accounts-payable", requireViewer, async (req, res) => {
-    const companyId = (req.query.companyId as string) || (req.headers['x-company-id'] as string);
-    console.log(`GET /api/accounts-payable called. CompanyID from request: ${companyId}`);
-    const accounts = await storage.getAccountsPayable(companyId);
+    let companyId = req.query.companyId as string || req.headers['x-company-id'] as string;
+
+    // Handle case where companyId might be an array or comma-separated string due to duplicate query params
+    if (Array.isArray(companyId)) {
+      companyId = companyId.includes('all') ? 'all' : companyId[0];
+    } else if (typeof companyId === 'string' && companyId.includes(',')) {
+      const parts = companyId.split(',');
+      companyId = parts.includes('all') ? 'all' : parts[0];
+    }
+
+    const startDate = req.query.startDate as string;
+    const endDate = req.query.endDate as string;
+
+    console.log(`GET /api/accounts-payable called. CompanyID: ${companyId}, Dates: ${startDate} to ${endDate}`);
+    const accounts = await storage.getAccountsPayable(companyId, startDate, endDate);
     console.log(`GET /api/accounts-payable returning ${accounts.length} accounts`);
     res.json(accounts);
   });
@@ -371,7 +383,9 @@ export async function registerRoutes(
   app.get("/api/accounts-payable/upcoming", requireViewer, async (req, res) => {
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
-    const companyId = (req.query.companyId as string) || (req.headers['x-company-id'] as string);
+    let companyId = req.query.companyId as string || req.headers['x-company-id'] as string;
+    if (Array.isArray(companyId)) { companyId = companyId.includes('all') ? 'all' : companyId[0]; }
+    else if (typeof companyId === 'string' && companyId.includes(',')) { const parts = companyId.split(','); companyId = parts.includes('all') ? 'all' : parts[0]; }
     const upcoming = await storage.getUpcomingAccountsPayable(startDate, endDate, companyId);
     res.json(upcoming);
   });
@@ -413,15 +427,30 @@ export async function registerRoutes(
   });
 
   app.get("/api/accounts-receivable", requireViewer, async (req, res) => {
-    const companyId = (req.query.companyId as string) || (req.headers['x-company-id'] as string);
-    const accounts = await storage.getAccountsReceivable(companyId);
+    let companyId = req.query.companyId as string || req.headers['x-company-id'] as string;
+
+    // Handle case where companyId might be an array or comma-separated string
+    if (Array.isArray(companyId)) {
+      companyId = companyId.includes('all') ? 'all' : companyId[0];
+    } else if (typeof companyId === 'string' && companyId.includes(',')) {
+      const parts = companyId.split(',');
+      companyId = parts.includes('all') ? 'all' : parts[0];
+    }
+
+    const startDate = req.query.startDate as string;
+    const endDate = req.query.endDate as string;
+
+    console.log(`GET /api/accounts-receivable called. CompanyID: ${companyId}, Dates: ${startDate} to ${endDate}`);
+    const accounts = await storage.getAccountsReceivable(companyId, startDate, endDate);
     res.json(accounts);
   });
 
   app.get("/api/accounts-receivable/upcoming", requireViewer, async (req, res) => {
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
-    const companyId = (req.query.companyId as string) || (req.headers['x-company-id'] as string);
+    let companyId = req.query.companyId as string || req.headers['x-company-id'] as string;
+    if (Array.isArray(companyId)) { companyId = companyId.includes('all') ? 'all' : companyId[0]; }
+    else if (typeof companyId === 'string' && companyId.includes(',')) { const parts = companyId.split(','); companyId = parts.includes('all') ? 'all' : parts[0]; }
     const upcoming = await storage.getUpcomingAccountsReceivable(startDate, endDate, companyId);
     res.json(upcoming);
   });
@@ -453,7 +482,9 @@ export async function registerRoutes(
     console.log(`[Dashboard API] Fetching stats for user: ${req.user?.username}, authenticated: ${req.isAuthenticated()}`);
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
-    const companyId = (req.query.companyId as string) || (req.headers['x-company-id'] as string);
+    let companyId = req.query.companyId as string || req.headers['x-company-id'] as string;
+    if (Array.isArray(companyId)) { companyId = companyId.includes('all') ? 'all' : companyId[0]; }
+    else if (typeof companyId === 'string' && companyId.includes(',')) { const parts = companyId.split(','); companyId = parts.includes('all') ? 'all' : parts[0]; }
     const stats = await storage.getDashboardStats(startDate, endDate, companyId);
     res.json(stats);
   });
@@ -461,7 +492,9 @@ export async function registerRoutes(
   app.get("/api/dashboard/cash-flow", requireViewer, async (req, res) => {
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
-    const companyId = (req.query.companyId as string) || (req.headers['x-company-id'] as string);
+    let companyId = req.query.companyId as string || req.headers['x-company-id'] as string;
+    if (Array.isArray(companyId)) { companyId = companyId.includes('all') ? 'all' : companyId[0]; }
+    else if (typeof companyId === 'string' && companyId.includes(',')) { const parts = companyId.split(','); companyId = parts.includes('all') ? 'all' : parts[0]; }
     const data = await storage.getCashFlowDataByDateRange(startDate, endDate, companyId);
     res.json(data);
   });
@@ -469,7 +502,9 @@ export async function registerRoutes(
   app.get("/api/dashboard/category-expenses", requireViewer, async (req, res) => {
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
-    const companyId = (req.query.companyId as string) || (req.headers['x-company-id'] as string);
+    let companyId = req.query.companyId as string || req.headers['x-company-id'] as string;
+    if (Array.isArray(companyId)) { companyId = companyId.includes('all') ? 'all' : companyId[0]; }
+    else if (typeof companyId === 'string' && companyId.includes(',')) { const parts = companyId.split(','); companyId = parts.includes('all') ? 'all' : parts[0]; }
     const data = await storage.getCategoryExpensesByDateRange(startDate, endDate, companyId);
     res.json(data);
   });
@@ -478,7 +513,11 @@ export async function registerRoutes(
     const period = (req.query.period as string) || "daily";
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
-    const companyId = (req.query.companyId as string) || (req.headers['x-company-id'] as string);
+    let companyId = req.query.companyId as string || req.headers['x-company-id'] as string;
+    if (Array.isArray(companyId)) { companyId = companyId.includes('all') ? 'all' : companyId[0]; }
+    else if (typeof companyId === 'string' && companyId.includes(',')) { const parts = companyId.split(','); companyId = parts.includes('all') ? 'all' : parts[0]; }
+
+    console.log(`[DEBUG] /api/cash-flow - companyId: ${companyId}, period: ${period}, startDate: ${startDate}, endDate: ${endDate}`);
 
     let data;
     if (startDate && endDate) {
@@ -486,6 +525,7 @@ export async function registerRoutes(
     } else {
       data = await storage.getCashFlowData(period, companyId);
     }
+    console.log(`[DEBUG] /api/cash-flow - returning ${data.length} items`);
     res.json(data);
   });
 
@@ -493,14 +533,19 @@ export async function registerRoutes(
     const period = (req.query.period as string) || "daily";
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
-    const companyId = (req.query.companyId as string) || (req.headers['x-company-id'] as string);
+    let companyId = req.query.companyId as string || req.headers['x-company-id'] as string;
+    if (Array.isArray(companyId)) { companyId = companyId.includes('all') ? 'all' : companyId[0]; }
+    else if (typeof companyId === 'string' && companyId.includes(',')) { const parts = companyId.split(','); companyId = parts.includes('all') ? 'all' : parts[0]; }
+
+    console.log(`[DEBUG] /api/cash-flow/summary - companyId: ${companyId}, period: ${period}`);
 
     let summary;
     if (startDate && endDate) {
       summary = await storage.getCashFlowSummaryByDateRange(startDate, endDate, companyId);
     } else {
-      summary = await storage.getCashFlowSummary(period);
+      summary = await storage.getCashFlowSummary(period, companyId);
     }
+    console.log(`[DEBUG] /api/cash-flow/summary - returning summary with totalIncome: ${summary?.totalIncome}`);
     res.json(summary);
   });
 
@@ -508,7 +553,9 @@ export async function registerRoutes(
     const period = (req.query.period as string) || "daily";
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
-    const companyId = (req.query.companyId as string) || (req.headers['x-company-id'] as string);
+    let companyId = req.query.companyId as string || req.headers['x-company-id'] as string;
+    if (Array.isArray(companyId)) { companyId = companyId.includes('all') ? 'all' : companyId[0]; }
+    else if (typeof companyId === 'string' && companyId.includes(',')) { const parts = companyId.split(','); companyId = parts.includes('all') ? 'all' : parts[0]; }
 
     let kpis;
     if (startDate && endDate) {
@@ -520,14 +567,18 @@ export async function registerRoutes(
   });
 
   app.get("/api/cash-flow/alerts", requireViewer, async (req, res) => {
-    const companyId = (req.query.companyId as string) || (req.headers['x-company-id'] as string);
+    let companyId = req.query.companyId as string || req.headers['x-company-id'] as string;
+    if (Array.isArray(companyId)) { companyId = companyId.includes('all') ? 'all' : companyId[0]; }
+    else if (typeof companyId === 'string' && companyId.includes(',')) { const parts = companyId.split(','); companyId = parts.includes('all') ? 'all' : parts[0]; }
     const alerts = await storage.getCashFlowAlerts(companyId);
     res.json(alerts);
   });
 
   app.get("/api/cash-flow/movements/:date", requireViewer, async (req, res) => {
     const { date } = req.params;
-    const companyId = (req.query.companyId as string) || (req.headers['x-company-id'] as string);
+    let companyId = req.query.companyId as string || req.headers['x-company-id'] as string;
+    if (Array.isArray(companyId)) { companyId = companyId.includes('all') ? 'all' : companyId[0]; }
+    else if (typeof companyId === 'string' && companyId.includes(',')) { const parts = companyId.split(','); companyId = parts.includes('all') ? 'all' : parts[0]; }
     const movements = await storage.getDailyMovements(date, companyId);
     res.json(movements);
   });
@@ -537,7 +588,11 @@ export async function registerRoutes(
     const period = req.query.period as string;
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
-    const companyId = (req.query.companyId as string) || (req.headers['x-company-id'] as string);
+    let companyId = req.query.companyId as string || req.headers['x-company-id'] as string;
+    if (Array.isArray(companyId)) { companyId = companyId.includes('all') ? 'all' : companyId[0]; }
+    else if (typeof companyId === 'string' && companyId.includes(',')) { const parts = companyId.split(','); companyId = parts.includes('all') ? 'all' : parts[0]; }
+
+    console.log(`[DEBUG] /api/cash-flow/movements - companyId: ${companyId}, date: ${date}, period: ${period}, startDate: ${startDate}, endDate: ${endDate}`);
 
     let movements;
     if (startDate && endDate) {
@@ -551,6 +606,7 @@ export async function registerRoutes(
       const today = new Date().toISOString().split("T")[0];
       movements = await storage.getDailyMovements(today, companyId);
     }
+    console.log(`[DEBUG] /api/cash-flow/movements - returning ${movements.length} movements`);
     res.json(movements);
   });
 

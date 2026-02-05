@@ -114,7 +114,7 @@ export const accountsPayable = pgTable("accounts_payable", {
 
 export const insertAccountPayableSchema = createInsertSchema(accountsPayable).omit({ id: true });
 export type InsertAccountPayable = z.infer<typeof insertAccountPayableSchema>;
-export type AccountPayable = typeof accountsPayable.$inferSelect;
+export type AccountPayable = typeof accountsPayable.$inferSelect & { categoryName?: string; supplierName?: string };
 
 // Accounts Receivable (Contas a Receber)
 export const accountsReceivable = pgTable("accounts_receivable", {
@@ -138,7 +138,7 @@ export const accountsReceivable = pgTable("accounts_receivable", {
 
 export const insertAccountReceivableSchema = createInsertSchema(accountsReceivable).omit({ id: true });
 export type InsertAccountReceivable = z.infer<typeof insertAccountReceivableSchema>;
-export type AccountReceivable = typeof accountsReceivable.$inferSelect;
+export type AccountReceivable = typeof accountsReceivable.$inferSelect & { categoryName?: string; clientName?: string };
 
 // Mercado Pago Transactions
 export const mercadoPagoTransactions = pgTable("mercado_pago_transactions", {

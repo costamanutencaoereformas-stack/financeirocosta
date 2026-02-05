@@ -513,15 +513,25 @@ export default function AccountsPayable() {
   const recurrence = form.watch("recurrence");
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold" data-testid="text-page-title">Contas a Pagar</h1>
-          <p className="text-muted-foreground">
-            Gerencie suas despesas e pagamentos
+    <div className="space-y-8">
+      {/* Header - Melhorado */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">Contas a Pagar</h1>
+          <p className="text-lg text-muted-foreground">
+            Gerenciamento completo de despesas e pagamentos
           </p>
         </div>
-        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-950 rounded-lg border border-red-200 dark:border-red-800">
+            <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
+            <span className="text-sm font-medium text-red-600 dark:text-red-400">Gestão de Despesas</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Botão Nova Conta - Flutuante */}
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
             <Button data-testid="button-new-payable">
               <Plus className="h-4 w-4 mr-2" />
@@ -1426,93 +1436,166 @@ export default function AccountsPayable() {
         </DialogContent>
       </Dialog>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
-          <CardContent className="p-4">
+      {/* Cards de Estatísticas - Layout Dinâmico */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Total</p>
-                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{formatCurrency(stats.total)}</p>
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">{filteredAccounts.length} contas</p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                    <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Total</p>
+                </div>
+                <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">
+                  {formatCurrency(stats.total)}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                  <FileText className="h-3 w-3" />
+                  <span>{filteredAccounts.length} contas</span>
+                </div>
               </div>
-              <DollarSign className="h-8 w-8 text-blue-500 dark:text-blue-400" />
+              <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full group-hover:scale-110 transition-transform">
+                <DollarSign className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-800">
-          <CardContent className="p-4">
+        <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950 dark:to-amber-950 border-orange-200 dark:border-orange-800">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-orange-600 dark:text-orange-400">Pendentes</p>
-                <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">{formatCurrency(stats.pending)}</p>
-                <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">{stats.pendingCount} contas</p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+                    <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">Pendentes</p>
+                </div>
+                <div className="text-3xl font-bold text-orange-900 dark:text-orange-100">
+                  {formatCurrency(stats.pending)}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
+                  <AlertCircle className="h-3 w-3" />
+                  <span>{stats.pendingCount} contas</span>
+                </div>
               </div>
-              <Clock className="h-8 w-8 text-orange-500 dark:text-orange-400" />
+              <div className="p-3 bg-orange-100 dark:bg-orange-900 rounded-full group-hover:scale-110 transition-transform">
+                <Clock className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
-          <CardContent className="p-4">
+        <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-green-200 dark:border-green-800">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-600 dark:text-green-400">Pagos</p>
-                <p className="text-2xl font-bold text-green-900 dark:text-green-100">{formatCurrency(stats.paid)}</p>
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1">{stats.paidCount} contas</p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-green-600 dark:text-green-400">Pagos</p>
+                </div>
+                <div className="text-3xl font-bold text-green-900 dark:text-green-100">
+                  {formatCurrency(stats.paid)}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                  <TrendingUp className="h-3 w-3" />
+                  <span>{stats.paidCount} contas</span>
+                </div>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500 dark:text-green-400" />
+              <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full group-hover:scale-110 transition-transform">
+                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-red-200 dark:border-red-800">
-          <CardContent className="p-4">
+        <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950 dark:to-rose-950 border-red-200 dark:border-red-800">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-red-600 dark:text-red-400">Vencidos</p>
-                <p className="text-2xl font-bold text-red-900 dark:text-red-100">{formatCurrency(stats.overdue)}</p>
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{stats.overdueCount} contas</p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg">
+                    <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-red-600 dark:text-red-400">Vencidos</p>
+                </div>
+                <div className="text-3xl font-bold text-red-900 dark:text-red-100">
+                  {formatCurrency(stats.overdue)}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+                  <AlertCircle className="h-3 w-3" />
+                  <span>{stats.overdueCount} contas</span>
+                </div>
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-500 dark:text-red-400" />
+              <div className="p-3 bg-red-100 dark:bg-red-900 rounded-full group-hover:scale-110 transition-transform">
+                <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800">
-          <CardContent className="p-4">
+        <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950 dark:to-violet-950 border-purple-200 dark:border-purple-800">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Juros/Multa</p>
-                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{formatCurrency(stats.totalLateFees)}</p>
-                <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">Acréscimos totais</p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                    <Percent className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Juros/Multa</p>
+                </div>
+                <div className="text-3xl font-bold text-purple-900 dark:text-purple-100">
+                  {formatCurrency(stats.totalLateFees)}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400">
+                  <TrendingUp className="h-3 w-3" />
+                  <span>Acréscimos totais</span>
+                </div>
               </div>
-              <Percent className="h-8 w-8 text-purple-500 dark:text-purple-400" />
+              <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-full group-hover:scale-110 transition-transform">
+                <Percent className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-950 dark:to-teal-900 border-teal-200 dark:border-teal-800">
-          <CardContent className="p-4">
+        <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950 dark:to-cyan-950 border-teal-200 dark:border-teal-800">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-teal-600 dark:text-teal-400">Descontos</p>
-                <p className="text-2xl font-bold text-teal-900 dark:text-teal-100">{formatCurrency(stats.totalDiscount)}</p>
-                <p className="text-xs text-teal-600 dark:text-teal-400 mt-1">Economia total</p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-teal-100 dark:bg-teal-900 rounded-lg">
+                    <TrendingDown className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-teal-600 dark:text-teal-400">Descontos</p>
+                </div>
+                <div className="text-3xl font-bold text-teal-900 dark:text-teal-100">
+                  {formatCurrency(stats.totalDiscount)}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-teal-600 dark:text-teal-400">
+                  <TrendingDown className="h-3 w-3" />
+                  <span>Economia total</span>
+                </div>
               </div>
-              <TrendingDown className="h-8 w-8 text-teal-500 dark:text-teal-400" />
+              <div className="p-3 bg-teal-100 dark:bg-teal-900 rounded-full group-hover:scale-110 transition-transform">
+                <TrendingDown className="h-6 w-6 text-teal-600 dark:text-teal-400" />
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Contas a Pagar</h1>
-              <p className="text-gray-600 mt-1">Gerencie suas contas e pagamentos</p>
+      {/* Tabela Principal - Layout Melhorado */}
+      <Card className="shadow-lg border-0">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-950 dark:to-gray-950">
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+            <div className="space-y-1">
+              <h2 className="text-2xl font-bold">Lista de Contas</h2>
+              <p className="text-sm text-muted-foreground">Gerencie todas as suas contas a pagar</p>
             </div>
             <Button
               onClick={() => {
@@ -1520,7 +1603,7 @@ export default function AccountsPayable() {
                 form.reset();
                 setIsOpen(true);
               }}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg"
               data-testid="button-new-account"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -1528,8 +1611,9 @@ export default function AccountsPayable() {
             </Button>
           </div>
 
-          <div className="bg-white dark:bg-card p-4 rounded-lg shadow-sm border border-gray-200 dark:border-border mb-6">
-            <div className="flex flex-col lg:flex-row gap-4">
+          {/* Filtros - Layout Compacto */}
+          <div className="bg-white dark:bg-card p-4 rounded-lg shadow-sm border border-gray-200 dark:border-border mt-4">
+            <div className="flex flex-col xl:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -1537,15 +1621,15 @@ export default function AccountsPayable() {
                     placeholder="Buscar contas..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 h-10"
                     data-testid="input-search"
                   />
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={activeFilter} onValueChange={setActiveFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Status da Conta" />
+                  <SelectTrigger className="w-full sm:w-[140px] h-10">
+                    <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Ativas</SelectItem>
@@ -1554,11 +1638,11 @@ export default function AccountsPayable() {
                   </SelectContent>
                 </Select>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Filtrar por status" />
+                  <SelectTrigger className="w-full sm:w-[140px] h-10">
+                    <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos os status</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="pending">Pendentes</SelectItem>
                     <SelectItem value="paid">Pagos</SelectItem>
                     <SelectItem value="overdue">Vencidos</SelectItem>
@@ -1566,25 +1650,21 @@ export default function AccountsPayable() {
                 </Select>
               </div>
               <div className="flex items-center gap-2">
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-muted-foreground mb-1 ml-1">Vencimento Início</span>
-                  <Input
-                    type="date"
-                    value={dateFilter.start}
-                    onChange={(e) => setDateFilter(prev => ({ ...prev, start: e.target.value }))}
-                    className="w-[140px]"
-                  />
-                </div>
-                <span className="text-sm text-muted-foreground pt-5">até</span>
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-muted-foreground mb-1 ml-1">Vencimento Fim</span>
-                  <Input
-                    type="date"
-                    value={dateFilter.end}
-                    onChange={(e) => setDateFilter(prev => ({ ...prev, end: e.target.value }))}
-                    className="w-[140px]"
-                  />
-                </div>
+                <Input
+                  type="date"
+                  value={dateFilter.start}
+                  onChange={(e) => setDateFilter(prev => ({ ...prev, start: e.target.value }))}
+                  className="w-[140px] h-10"
+                  placeholder="Início"
+                />
+                <span className="text-sm text-muted-foreground">até</span>
+                <Input
+                  type="date"
+                  value={dateFilter.end}
+                  onChange={(e) => setDateFilter(prev => ({ ...prev, end: e.target.value }))}
+                  className="w-[140px] h-10"
+                  placeholder="Fim"
+                />
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1 p-1 bg-muted rounded-lg">
                     <Button
@@ -1617,7 +1697,6 @@ export default function AccountsPayable() {
                         setDateFilter({ start: "", end: "" });
                       }}
                       title="Limpar filtros"
-                      className="mt-4"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -1627,11 +1706,15 @@ export default function AccountsPayable() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           {isLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
+            <div className="space-y-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="p-4 border rounded-lg">
+                  <Skeleton className="h-6 w-32 mb-2" />
+                  <Skeleton className="h-4 w-full mb-1" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
               ))}
             </div>
           ) : filteredAccounts && filteredAccounts.length > 0 ? (
@@ -1640,22 +1723,22 @@ export default function AccountsPayable() {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead>Fornecedor</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead>Vencimento</TableHead>
-                        <TableHead className="text-right">Valor</TableHead>
-                        <TableHead className="text-right">Juros/Multa</TableHead>
-                        <TableHead className="text-right">Desconto</TableHead>
-                        <TableHead className="text-right font-bold">Valor Líquido</TableHead>
-                        <TableHead>Data Pagamento</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
+                      <TableRow className="border-b-2 bg-muted/30">
+                        <TableHead className="font-semibold text-sm">Descrição</TableHead>
+                        <TableHead className="font-semibold text-sm">Fornecedor</TableHead>
+                        <TableHead className="font-semibold text-sm">Categoria</TableHead>
+                        <TableHead className="font-semibold text-sm">Vencimento</TableHead>
+                        <TableHead className="font-semibold text-sm text-right">Valor</TableHead>
+                        <TableHead className="font-semibold text-sm text-right">Juros/Multa</TableHead>
+                        <TableHead className="font-semibold text-sm text-right">Desconto</TableHead>
+                        <TableHead className="font-semibold text-sm text-right font-bold">Valor Líquido</TableHead>
+                        <TableHead className="font-semibold text-sm">Pagamento</TableHead>
+                        <TableHead className="font-semibold text-sm">Status</TableHead>
+                        <TableHead className="font-semibold text-sm w-[50px]"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredAccounts.map((account) => {
+                      {filteredAccounts.map((account, index) => {
                         const supplier = suppliers?.find((s) => s.id === account.supplierId);
                         const category = categories?.find((c) => c.id === account.categoryId);
                         const overdue = isOverdue(account.dueDate, account.status);
@@ -1666,85 +1749,127 @@ export default function AccountsPayable() {
                         const netValue = amountNum + lateFeesNum - discountNum;
 
                         return (
-                          <TableRow key={account.id} data-testid={`row-payable-${account.id}`}>
-                        <TableCell className="font-medium">
-                          {account.description}
-                        </TableCell>
-                        <TableCell>
-                          {supplier ? (
-                            <div className="flex items-center gap-2">
-                              <Building2 className="h-4 w-4 text-muted-foreground" />
-                              <span>{supplier.name}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {category ? (
-                            <Badge variant="secondary" className="font-normal">
-                              {category.name}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span>{formatDate(account.dueDate)}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {formatCurrency(account.amount)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {account.lateFees && account.lateFees !== null ? (
-                            <span className="text-orange-600 font-medium">
-                              {formatCurrency(account.lateFees)}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {account.discount && account.discount !== null ? (
-                            <span className="text-green-600 font-medium">
-                              {formatCurrency(account.discount)}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-bold">
-                          {formatCurrency(netValue.toFixed(2))}
-                        </TableCell>
-                        <TableCell>
-                          {account.paymentDate ? (
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-green-600" />
-                              <span className="text-green-600">{formatDate(account.paymentDate)}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(displayStatus)}>
-                            {getStatusLabel(displayStatus)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" data-testid={`button-actions-${account.id}`}>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => handleClone(account)}
-                                data-testid={`button-clone-${account.id}`}
+                          <TableRow 
+                            key={account.id} 
+                            data-testid={`row-payable-${account.id}`}
+                            className={`hover:bg-muted/50 transition-colors ${index % 2 === 0 ? 'bg-background' : 'bg-muted/10'}`}
+                          >
+                            <TableCell className="font-medium max-w-[200px]">
+                              <div className="truncate" title={account.description}>
+                                {account.description}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {supplier ? (
+                                <div className="flex items-center gap-2">
+                                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm">{supplier.name}</span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {category ? (
+                                <Badge variant="secondary" className="font-normal text-xs px-2 py-1">
+                                  {category.name}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">{formatDate(account.dueDate)}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-red-600 dark:text-red-400">
+                              -{formatCurrency(account.amount)}
+                            </TableCell>
+                            <TableCell className="text-right text-sm">
+                              {account.lateFees && parseFloat(account.lateFees) > 0 ? (
+                                <span className="text-orange-600 font-medium">+{formatCurrency(account.lateFees)}</span>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right text-sm">
+                              {account.discount && parseFloat(account.discount) > 0 ? (
+                                <span className="text-green-600 font-medium">-{formatCurrency(account.discount)}</span>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-lg">
+                              <span className={netValue > amountNum ? "text-orange-600" : netValue < amountNum ? "text-green-600" : "text-red-600"}>
+                                -{formatCurrency(netValue.toFixed(2))}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                {account.paymentDate ? (
+                                  <div className="flex items-center gap-1">
+                                    <CheckCircle className="h-3 w-3 text-green-500" />
+                                    {formatDate(account.paymentDate)}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground">-</span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`${getStatusColor(displayStatus)} px-3 py-1`}>
+                                <div className="flex items-center gap-2">
+                                  {displayStatus === "paid" && <CheckCircle className="h-3 w-3" />}
+                                  {displayStatus === "pending" && <Clock className="h-3 w-3" />}
+                                  {displayStatus === "overdue" && <AlertTriangle className="h-3 w-3" />}
+                                  <span className="font-medium">{getStatusLabel(displayStatus)}</span>
+                                </div>
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleEdit(account)}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleClone(account)}>
+                                    <Copy className="h-4 w-4 mr-2" />
+                                    Clonar
+                                  </DropdownMenuItem>
+                                  {account.status !== "paid" && (
+                                    <DropdownMenuItem 
+                                      onClick={() => handleMarkAsPaid(account)}
+                                      className="text-green-600"
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-2" />
+                                      Marcar como Pago
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem 
+                                    onClick={() => deleteMutation.mutate(account.id)}
+                                    className="text-red-600"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Desativar
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
                               >
                                 <Copy className="h-4 w-4 mr-2" />
                                 Clonar Lançamento
@@ -1807,102 +1932,9 @@ export default function AccountsPayable() {
                       <Card key={account.id} className="hover:shadow-lg transition-all duration-200 group">
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-3">
-                            <Badge className={getStatusColor(displayStatus)}>
-                              {getStatusLabel(displayStatus)}
-                            </Badge>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <MoreHorizontal className="h-4 w-4" />
                                 </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => handlePay(account)}
-                                  data-testid={`button-pay-${account.id}`}
-                                >
-                                  <DollarSign className="h-4 w-4 mr-2" />
-                                  Pagar Conta
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleEdit(account)}
-                                  data-testid={`button-edit-${account.id}`}
-                                  disabled={account.status === "paid"}
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Editar
-                                  {account.status === "paid" && (
-                                    <span className="ml-2 text-xs text-gray-400">(Não disponível)</span>
-                                  )}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => deleteMutation.mutate(account.id)}
-                                  data-testid={`button-delete-${account.id}`}
-                                  className="text-red-600"
-                                  disabled={account.status === "paid"}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Desativar
-                                  {account.status === "paid" && (
-                                    <span className="ml-2 text-xs text-gray-400">(Não disponível)</span>
-                                  )}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                          
-                          <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
-                            {account.description}
-                          </h3>
-                          
-                          <div className="space-y-2 mb-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">Fornecedor:</span>
-                              <span className="text-sm font-medium">
-                                {supplier ? supplier.name : "-"}
-                              </span>
+                              )}
                             </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">Categoria:</span>
-                              <span className="text-sm font-medium">
-                                {category ? category.name : "-"}
-                              </span>
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">Vencimento:</span>
-                              <span className="text-sm font-medium">{formatDate(account.dueDate)}</span>
-                            </div>
-                          </div>
-                          
-                          <div className="border-t pt-3 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">Valor:</span>
-                              <span className="font-bold text-lg">{formatCurrency(account.amount)}</span>
-                            </div>
-                            
-                            {(lateFeesNum > 0 || discountNum > 0) && (
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Acréscimos:</span>
-                                <span className="font-medium text-orange-600">
-                                  {lateFeesNum > 0 && `+${formatCurrency(account.lateFees)}`}
-                                  {discountNum > 0 && ` -${formatCurrency(account.discount)}`}
-                                </span>
-                              </div>
-                            )}
-                            
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">Valor Líquido:</span>
-                              <span className="font-bold text-lg text-green-600">{formatCurrency(netValue.toFixed(2))}</span>
-                            </div>
-                            
-                            {account.paymentDate && (
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Pago em:</span>
-                                <span className="text-sm font-medium text-green-600">{formatDate(account.paymentDate)}</span>
-                              </div>
-                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -1912,14 +1944,17 @@ export default function AccountsPayable() {
               )}
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <Building2 className="h-12 w-12 mb-4" />
-              <p className="text-lg font-medium">Nenhuma conta encontrada</p>
-              <p className="text-sm">Tente ajustar os filtros ou clique em "Nova Conta" para adicionar</p>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="p-4 bg-red-50 dark:bg-red-950 rounded-full mb-4">
+                <TrendingDown className="h-12 w-12 text-red-500 dark:text-red-400" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Nenhuma conta encontrada</h3>
+              <p className="text-muted-foreground max-w-md">
+                Não há contas a pagar no período selecionado. Tente ajustar os filtros ou clique em "Nova Conta" para adicionar.
+              </p>
             </div>
           )}
         </CardContent>
       </Card>
     </div>
-  );
 }
