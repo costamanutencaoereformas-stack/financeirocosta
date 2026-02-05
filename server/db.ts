@@ -1,24 +1,13 @@
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
-import pkg from "pg";
-const { Pool } = pkg;
+import pg from "pg";
 import * as schema from "@shared/schema";
-
-if (!process.env.DATABASE_URL) {
-  console.error("❌ DATABASE_URL environment variable is not set!");
-} else {
-  console.log(`[DB] DATABASE_URL is set (length: ${process.env.DATABASE_URL.length})`);
-}
 
 const connectionString = process.env.DATABASE_URL || "";
 
-export const pool = new Pool({
+export const pool = new pg.Pool({
   connectionString: connectionString,
-  ssl: { rejectUnauthorized: false }, // Forçado para garantir compatibilidade com Supabase/pooler
-});
-
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
+  ssl: { rejectUnauthorized: false },
 });
 
 export const db = drizzle(pool, { schema });
