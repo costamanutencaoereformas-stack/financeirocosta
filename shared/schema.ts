@@ -28,6 +28,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   team: true,
   status: true,
   active: true,
+}).extend({
+  id: z.string().optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -181,6 +183,17 @@ export interface DashboardStats {
   dueTodayCount: number;
   dueThisWeekCount: number;
   totalDiscounts: number;
+  // Campos auxiliares para compatibilidade
+  totalIncome?: number;
+  totalExpense?: number;
+  currentBalance?: number;
+  initialBalance?: number;
+  finalBalance?: number;
+  totalIncomePending?: number;
+  totalExpensePending?: number;
+  totalIncomeConfirmed?: number;
+  totalExpenseConfirmed?: number;
+  netFlow?: number;
 }
 
 export interface CashFlowData {

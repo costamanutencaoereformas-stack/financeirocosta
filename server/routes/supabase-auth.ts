@@ -1,4 +1,4 @@
-import { express, Router } from 'express';
+import express, { Router } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { storage } from '../storage';
 import { z } from 'zod';
@@ -13,7 +13,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   console.warn('⚠️ Supabase credentials not found in environment variables');
 }
 
-const supabase = supabaseUrl && supabaseServiceKey 
+const supabase = supabaseUrl && supabaseServiceKey
   ? createClient(supabaseUrl, supabaseServiceKey)
   : null;
 
@@ -26,7 +26,7 @@ const userProfileSchema = z.object({
 // Middleware to verify Supabase JWT token
 async function verifySupabaseToken(req: any, res: any, next: any) {
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Token não fornecido' });
   }
@@ -39,7 +39,7 @@ async function verifySupabaseToken(req: any, res: any, next: any) {
 
   try {
     const { data: { user }, error } = await supabase.auth.getUser(token);
-    
+
     if (error || !user) {
       return res.status(401).json({ error: 'Token inválido' });
     }
@@ -70,14 +70,17 @@ router.post('/user-profile', verifySupabaseToken, async (req, res) => {
       const updatedUser = await storage.updateUser(supabaseUser.id, {
         fullName: fullName || existingUser.fullName,
         email: email || existingUser.email,
+        username: email || existingUser.username,
       });
       return res.json({ user: updatedUser });
     } else {
       // Create new user
+      const userData = supabaseUser as any;
       const newUser = await storage.createUser({
         id: supabaseUser.id,
-        email: email,
-        fullName: fullName || supabaseUser.user_metadata?.full_name || email?.split('@')[0],
+        username: email || userData.email || supabaseUser.id,
+        email: email || userData.email,
+        fullName: fullName || userData.user_metadata?.full_name || email?.split('@')[0],
         role: 'viewer', // Default role
         status: 'active',
         team: null,
@@ -93,8 +96,8 @@ router.post('/user-profile', verifySupabaseToken, async (req, res) => {
 // Get current user profile
 router.get('/me', verifySupabaseToken, async (req, res) => {
   try {
-    const supabaseUser = req.user;
-    
+    const supabaseUser = req.user as any;
+
     if (!supabaseUser) {
       return res.status(401).json({ error: 'Usuário não autenticado' });
     }
@@ -105,6 +108,7 @@ router.get('/me', verifySupabaseToken, async (req, res) => {
       // Create user if doesn't exist
       user = await storage.createUser({
         id: supabaseUser.id,
+        username: supabaseUser.email || supabaseUser.id,
         email: supabaseUser.email,
         fullName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0],
         role: 'viewer',

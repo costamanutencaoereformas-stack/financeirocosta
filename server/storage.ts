@@ -82,11 +82,11 @@ export interface IStorage {
 
   getDashboardStats(startDate?: string, endDate?: string, companyId?: string): Promise<DashboardStats>;
   getCashFlowData(period: string, companyId?: string): Promise<CashFlowData[]>;
-  getCashFlowDataByDateRange(startDate: string, endDate: string): Promise<CashFlowData[]>;
+  getCashFlowDataByDateRange(startDate: string, endDate: string, companyId?: string): Promise<CashFlowData[]>;
   getCashFlowSummary(period: string, companyId?: string): Promise<{ totalIncome: number; totalExpense: number; netFlow: number; projectedBalance: number; currentBalance: number; initialBalance: number; finalBalance: number; totalIncomePending: number; totalExpensePending: number; totalIncomeConfirmed: number; totalExpenseConfirmed: number }>;
-  getCashFlowSummaryByDateRange(startDate: string, endDate: string): Promise<{ totalIncome: number; totalExpense: number; netFlow: number; projectedBalance: number; currentBalance: number; initialBalance: number; finalBalance: number; totalIncomePending: number; totalExpensePending: number; totalIncomeConfirmed: number; totalExpenseConfirmed: number }>;
+  getCashFlowSummaryByDateRange(startDate: string, endDate: string, companyId?: string): Promise<{ totalIncome: number; totalExpense: number; netFlow: number; projectedBalance: number; currentBalance: number; initialBalance: number; finalBalance: number; totalIncomePending: number; totalExpensePending: number; totalIncomeConfirmed: number; totalExpenseConfirmed: number }>;
   getCashFlowKPIs(period: string, companyId?: string): Promise<CashFlowKPIs>;
-  getCashFlowKPIsByDateRange(startDate: string, endDate: string): Promise<CashFlowKPIs>;
+  getCashFlowKPIsByDateRange(startDate: string, endDate: string, companyId?: string): Promise<CashFlowKPIs>;
   getCashFlowAlerts(companyId?: string): Promise<CashFlowAlert[]>;
   getDailyMovements(date: string, companyId?: string): Promise<DailyMovement[]>;
   getMovementsByPeriod(period: string, companyId?: string): Promise<DailyMovement[]>;
@@ -532,8 +532,8 @@ export class DatabaseStorage implements IStorage {
     const [newCompany] = await db.insert(companies).values({
       ...company,
       // Tratar valores nulos da API externa
-      razaoSocial: company.razaoSocial || null,
-      nome: company.nome || null,
+      razaoSocial: company.razaoSocial || "Razão Social não informada",
+      nome: company.nome || "Nome não informado",
       endereco: company.endereco || null,
       telefone: company.telefone || null,
       email: company.email || null,
@@ -564,12 +564,14 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (startDate && endDate) {
+      const start = startDate as string;
+      const end = endDate as string;
       baseConditions.push(
         or(
-          and(gte(accountsPayable.dueDate, startDate), lte(accountsPayable.dueDate, endDate)),
-          and(lt(accountsPayable.dueDate, startDate), eq(accountsPayable.status, "pending")),
-          and(lt(accountsPayable.dueDate, startDate), eq(accountsPayable.status, "overdue"))
-        )
+          and(gte(accountsPayable.dueDate, start), lte(accountsPayable.dueDate, end)),
+          and(lt(accountsPayable.dueDate, start), eq(accountsPayable.status, "pending")),
+          and(lt(accountsPayable.dueDate, start), eq(accountsPayable.status, "overdue"))
+        ) as any
       );
     }
 
@@ -765,12 +767,14 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (startDate && endDate) {
+      const start = startDate as string;
+      const end = endDate as string;
       baseConditions.push(
         or(
-          and(gte(accountsReceivable.dueDate, startDate), lte(accountsReceivable.dueDate, endDate)),
-          and(lt(accountsReceivable.dueDate, startDate), eq(accountsReceivable.status, "pending")),
-          and(lt(accountsReceivable.dueDate, startDate), eq(accountsReceivable.status, "overdue"))
-        )
+          and(gte(accountsReceivable.dueDate, start), lte(accountsReceivable.dueDate, end)),
+          and(lt(accountsReceivable.dueDate, start), eq(accountsReceivable.status, "pending")),
+          and(lt(accountsReceivable.dueDate, start), eq(accountsReceivable.status, "overdue"))
+        ) as any
       );
     }
 
@@ -1297,7 +1301,7 @@ export class DatabaseStorage implements IStorage {
       totalExpense: totalExpenseConfirmed,
       netFlow: totalIncome - totalExpense,
       projectedBalance,
-      currentBalance: stats.currentBalance,
+      currentBalance: stats.balance || 0,
       initialBalance: initialBalanceAdjustments,
       finalBalance: totalIncomeConfirmed - totalExpenseConfirmed,
       totalIncomePending,
@@ -1356,120 +1360,6 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getDashboardStats(startDateStr?: string, endDateStr?: string, companyId?: string): Promise<DashboardStats> {
-    // Default to current month if no dates provided
-    let startDate = startDateStr;
-    let endDate = endDateStr;
-
-    if (!startDate || !endDate) {
-      const today = new Date();
-      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      startDate = firstDay.toISOString().split("T")[0];
-      endDate = lastDay.toISOString().split("T")[0];
-    }
-
-    const cashFlowData = await this.getCashFlowDataByDateRange(startDate, endDate, companyId);
-    // Recursion risk if I call getDashboardStats inside getCashFlowData... no, getCashFlowData calls getCashFlowDataByDateRange.
-    // But getCashFlowSummary calls getDashboardStats.
-
-    const totalIncome = cashFlowData.reduce((sum, d) => sum + d.income, 0);
-    const totalExpense = cashFlowData.reduce((sum, d) => sum + d.expense, 0);
-
-    // Calcular valores separados por status
-    let allReceivables, allPayables, allCashFlowEntries, allBalanceAdjustments;
-
-    if (companyId) {
-      allReceivables = await db.select().from(accountsReceivable).where(eq(accountsReceivable.companyId, companyId));
-      allPayables = await db.select().from(accountsPayable).where(eq(accountsPayable.companyId, companyId));
-      allCashFlowEntries = await db.select().from(cashFlowEntries).where(eq(cashFlowEntries.companyId, companyId));
-    } else {
-      allReceivables = await db.select().from(accountsReceivable);
-      allPayables = await db.select().from(accountsPayable);
-      allCashFlowEntries = await db.select().from(cashFlowEntries);
-    }
-
-    allBalanceAdjustments = await db.select().from(balanceAdjustments);
-
-    // Receitas confirmadas (recebidas)
-    const confirmedIncome = allReceivables
-      .filter(r => r.status === "received" && r.receivedDate && r.receivedDate >= startDate && r.receivedDate <= endDate)
-      .reduce((sum, r) => {
-        const amount = parseFloat(r.amount || "0");
-        const discount = parseFloat(r.discount || "0");
-        return sum + (amount - discount);
-      }, 0);
-
-    // Receitas manuais confirmadas
-    const manualConfirmedIncome = allCashFlowEntries
-      .filter(e => e.type === "income" && e.status === "confirmed" && e.date >= startDate && e.date <= endDate)
-      .reduce((sum, e) => sum + parseFloat(e.amount?.toString() || "0"), 0);
-
-    const totalIncomeConfirmed = confirmedIncome + manualConfirmedIncome;
-
-    // Receitas pendentes - APENAS contas a receber pendentes
-    const totalIncomePending = allReceivables
-      .filter(r => r.status === "pending" && r.dueDate && r.dueDate >= startDate && r.dueDate <= endDate)
-      .reduce((sum, r) => {
-        const amount = parseFloat(r.amount || "0");
-        const discount = parseFloat(r.discount || "0");
-        return sum + (amount - discount);
-      }, 0);
-
-    // Despesas confirmadas (pagas)
-    const confirmedExpense = allPayables
-      .filter(p => p.status === "paid" && p.paymentDate && p.paymentDate >= startDate && p.paymentDate <= endDate)
-      .reduce((sum, p) => {
-        const amount = parseFloat(p.amount || "0");
-        const lateFees = parseFloat(p.lateFees || "0");
-        const discount = parseFloat(p.discount || "0");
-        return sum + (amount + lateFees - discount);
-      }, 0);
-
-    // Despesas manuais confirmadas
-    const manualConfirmedExpense = allCashFlowEntries
-      .filter(e => e.type === "expense" && e.status === "confirmed" && e.date >= startDate && e.date <= endDate)
-      .reduce((sum, e) => sum + parseFloat(e.amount?.toString() || "0"), 0);
-
-    const totalExpenseConfirmed = confirmedExpense + manualConfirmedExpense;
-
-    // Despesas pendentes - APENAS contas a pagar pendentes
-    const totalExpensePending = allPayables
-      .filter(p => p.status === "pending" && p.dueDate && p.dueDate >= startDate && p.dueDate <= endDate)
-      .reduce((sum, p) => {
-        const amount = parseFloat(p.amount || "0");
-        const lateFees = parseFloat(p.lateFees || "0");
-        const discount = parseFloat(p.discount || "0");
-        return sum + (amount + lateFees - discount);
-      }, 0);
-
-    // Calcular saldo inicial (ajustes de saldo do tipo 'initial')
-    const initialBalanceAdjustments = allBalanceAdjustments
-      .filter(a => a.balanceType === 'initial' && a.date >= startDate && a.date <= endDate)
-      .reduce((sum, a) => sum + parseFloat(a.amount?.toString() || "0"), 0);
-
-    const today = new Date().toISOString().split("T")[0];
-    const todayData = cashFlowData.find(d => d.date === today);
-
-    // Novo cálculo do saldo projetado: Total Entradas + Entradas Pendentes - Total Saídas - Saídas Pendentes
-    const totalAllIncome = totalIncomeConfirmed + totalIncomePending;
-    const totalAllExpense = totalExpenseConfirmed + totalExpensePending;
-    const projectedBalance = totalAllIncome - totalAllExpense;
-
-    return {
-      totalIncome: totalIncomeConfirmed + initialBalanceAdjustments, // Total Entradas = Saldo Inicial + Entradas Confirmadas
-      totalExpense: totalExpenseConfirmed,
-      netFlow: totalIncome - totalExpense,
-      projectedBalance,
-      currentBalance: todayData?.balance || 0,
-      initialBalance: initialBalanceAdjustments,
-      finalBalance: totalIncomeConfirmed - totalExpenseConfirmed, // Saldo Final = Entradas Realizadas - Saídas Finalizadas
-      totalIncomePending,
-      totalExpensePending,
-      totalIncomeConfirmed,
-      totalExpenseConfirmed,
-    };
-  }
 
   async getCashFlowKPIsByDateRange(startDate: string, endDate: string, companyId?: string): Promise<CashFlowKPIs> {
     const cashFlowData = await this.getCashFlowDataByDateRange(startDate, endDate, companyId);
