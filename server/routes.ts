@@ -84,18 +84,22 @@ export async function registerRoutes(
   app.post("/api/auth/register", async (req, res) => {
     try {
       const { username, email, password, fullName } = req.body;
+      console.log(`[Register API] Starting registration for: ${username}`);
 
       // Check if user already exists
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
+        console.log(`[Register API] Username already exists: ${username}`);
         return res.status(400).json({ error: "Nome de usuário já existe" });
       }
 
       // Hash password and create user
+      console.log(`[Register API] Hashing password...`);
       const salt = randomBytes(16).toString("hex");
       const buf = (await scryptAsync(password, salt, 64)) as Buffer;
       const hashedPassword = `${buf.toString("hex")}.${salt}`;
 
+      console.log(`[Register API] Creating user in storage...`);
       const newUser = await storage.createUser({
         username,
         email,
@@ -105,6 +109,7 @@ export async function registerRoutes(
         role: "viewer",
         status: "active"
       });
+      console.log(`[Register API] User created successfully: ${newUser.id}`);
 
       // Auto-login after registration
       req.login({
@@ -116,7 +121,7 @@ export async function registerRoutes(
         team: newUser.team
       }, (err) => {
         if (err) {
-          console.error("Auto-login error:", err);
+          console.error("[Register API] Auto-login error:", err);
         }
       });
 
@@ -130,26 +135,32 @@ export async function registerRoutes(
           team: newUser.team
         }
       });
-    } catch (error) {
-      console.error("Registration error:", error);
-      res.status(500).json({ error: "Erro ao criar usuário" });
+    } catch (error: any) {
+      console.error("[Register API] registration error:", error);
+      res.status(500).json({ error: "Erro ao criar usuário", details: error.message, stack: error.stack });
     }
   });
 
   app.get("/api/auth/me", (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(200).json({ user: null, authenticated: false });
-    }
-    res.json({
-      user: {
-        id: req.user!.id,
-        username: req.user!.username,
-        fullName: req.user!.fullName,
-        role: req.user!.role,
-        status: req.user!.status,
-        team: req.user!.team
+    try {
+      console.log(`[Me API] Authenticated: ${req.isAuthenticated()}`);
+      if (!req.isAuthenticated()) {
+        return res.status(200).json({ user: null, authenticated: false });
       }
-    });
+      res.json({
+        user: {
+          id: req.user!.id,
+          username: req.user!.username,
+          fullName: req.user!.fullName,
+          role: req.user!.role,
+          status: req.user!.status,
+          team: req.user!.team
+        }
+      });
+    } catch (err: any) {
+      console.error("[Me API] Error:", err);
+      res.status(500).json({ error: "Erro ao obter usuário atual", details: err.message, stack: err.stack });
+    }
   });
 
   app.get("/api/users", requireAdmin, async (req, res) => {
