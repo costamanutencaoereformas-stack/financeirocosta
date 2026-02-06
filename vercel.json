@@ -15,6 +15,10 @@
       "destination": "/api/debug-db.ts"
     },
     {
+      "source": "/api/debug-minimal-pg",
+      "destination": "/api/debug-minimal-pg.ts"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index.ts"
     },
