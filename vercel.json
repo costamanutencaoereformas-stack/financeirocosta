@@ -11,6 +11,10 @@
       "destination": "/api/debug-app.ts"
     },
     {
+      "source": "/api/debug-db",
+      "destination": "/api/debug-db.ts"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index.ts"
     },
